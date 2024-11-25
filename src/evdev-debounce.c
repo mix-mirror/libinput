@@ -126,20 +126,16 @@ static inline void
 debounce_set_timer(struct fallback_dispatch *fallback,
 		   uint64_t time)
 {
-	const int DEBOUNCE_TIMEOUT_BOUNCE = ms2us(25);
-
 	libinput_timer_set(&fallback->debounce.timer,
-			   time + DEBOUNCE_TIMEOUT_BOUNCE);
+			   time + fallback->debounce.timeout_bounce);
 }
 
 static inline void
 debounce_set_timer_short(struct fallback_dispatch *fallback,
 			 uint64_t time)
 {
-	const int DEBOUNCE_TIMEOUT_SPURIOUS = ms2us(12);
-
 	libinput_timer_set(&fallback->debounce.timer_short,
-			   time + DEBOUNCE_TIMEOUT_SPURIOUS);
+			   time + fallback->debounce.timeout_spurious);
 }
 
 static inline void
@@ -573,14 +569,28 @@ void
 fallback_init_debounce(struct fallback_dispatch *dispatch)
 {
 	struct evdev_device *device = dispatch->device;
+	struct quirks_context *quirks = evdev_libinput_context(device)->quirks;
+	struct quirks *q = quirks_fetch_for_device(quirks, device->udev_device);
+	bool disabled = false;
+	bool has_spurious_quirk = false;
+	uint32_t timeout_ms = 25;
+	uint32_t timeout_spurious_ms = 12;
 	char timer_name[64];
 
-	if (evdev_device_has_model_quirk(device, QUIRK_MODEL_BOUNCING_KEYS)) {
+	quirks_get_bool(q, QUIRK_MODEL_BOUNCING_KEYS, &disabled);
+	if (disabled) {
 		dispatch->debounce.state = DEBOUNCE_STATE_DISABLED;
-		return;
+		goto end;
 	}
 
+	quirks_get_uint32(q, QUIRK_ATTR_BOUNCING_TIMEOUT_MS, &timeout_ms);
+	has_spurious_quirk = quirks_get_uint32(q,
+	                                       QUIRK_ATTR_BOUNCING_TIMEOUT_SPURIOUS_MS,
+	                                       &timeout_spurious_ms);
+
 	dispatch->debounce.state = DEBOUNCE_STATE_IS_UP;
+	dispatch->debounce.timeout_bounce = ms2us(timeout_ms);
+	dispatch->debounce.timeout_spurious = ms2us(timeout_spurious_ms);
 
 	snprintf(timer_name,
 		 sizeof(timer_name),
@@ -601,4 +611,10 @@ fallback_init_debounce(struct fallback_dispatch *dispatch)
 			    timer_name,
 			    debounce_timeout,
 			    device);
+
+	if (has_spurious_quirk)
+		debounce_enable_spurious(dispatch);
+
+end:
+	quirks_unref(q);
 }

@@ -899,6 +899,8 @@ tools_list_device_quirks(struct quirks_context *ctx,
 			case QUIRK_ATTR_PALM_PRESSURE_THRESHOLD:
 			case QUIRK_ATTR_THUMB_PRESSURE_THRESHOLD:
 			case QUIRK_ATTR_THUMB_SIZE_THRESHOLD:
+			case QUIRK_ATTR_BOUNCING_TIMEOUT_MS:
+			case QUIRK_ATTR_BOUNCING_TIMEOUT_SPURIOUS_MS:
 				quirks_get_uint32(quirks, q, &v);
 				snprintf(buf, sizeof(buf), "%s=%u", name, v);
 				callback(userdata, buf);

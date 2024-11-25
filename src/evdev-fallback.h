@@ -145,6 +145,8 @@ struct fallback_dispatch {
 		uint64_t button_time;
 		struct libinput_timer timer;
 		struct libinput_timer timer_short;
+		uint32_t timeout_bounce;
+		uint32_t timeout_spurious;
 		enum debounce_state state;
 		bool spurious_enabled;
 	} debounce;

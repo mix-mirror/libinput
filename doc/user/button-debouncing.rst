@@ -54,3 +54,27 @@ correspond to the buttons 'pressed' and 'released' states, respectively.
 Some devices send events in bursts, erroneously triggering the button
 debouncing detection. Please :ref:`file a bug <reporting_bugs>` if that
 occurs for your device.
+
+------------------------------------------------------------------------------
+Configuration (via Quirks)
+------------------------------------------------------------------------------
+
+.. warning:: Quirks are an internal API, they come with no
+             backwards-compatibility guarantees or support for configuration.
+             Read the full :ref:`device-quirks` section before using.
+             Do NOT try to upstream your debouncing timeouts!
+
+It is possible to configure the timeouts used by both debouncing methods with
+quirks.
+Use ``libinput record`` to figure out the timing of bounced events.
+Then increase the "bounce" timeout quirk to be larger than that, but smaller
+than the fastest double click you can perform manually.
+
+Example quirk: ::
+
+    [My Borked Mouse]
+    MatchUdevType=mouse
+    MatchBus=usb
+    MatchName=*MyBorkedMouse*
+    ModelBouncingKeys=1
+    AttrBouncingTimeoutMs=100
