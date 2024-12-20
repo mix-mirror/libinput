@@ -1142,30 +1142,11 @@ tp_gesture_handle_state_pointer_motion(struct tp_dispatch *tp, uint64_t time)
 static void
 tp_gesture_handle_state_scroll_start(struct tp_dispatch *tp, uint64_t time)
 {
-	struct device_float_coords raw;
-	struct normalized_coords delta;
-
 	if (tp->scroll.method != LIBINPUT_CONFIG_SCROLL_2FG)
 		return;
 
-	/* We may confuse a pinch for a scroll initially,
-	 * allow ourselves to correct our guess.
-	 */
-	if (time < (tp->gesture.initial_time + DEFAULT_GESTURE_PINCH_TIMEOUT) &&
-	    tp_gesture_is_pinch(tp)) {
-		tp_gesture_handle_event(tp, GESTURE_EVENT_PINCH_START, time);
-		return;
-	}
-
-	raw = tp_get_average_touches_delta(tp);
-
-	/* scroll is not accelerated by default */
-	delta = tp_filter_scroll(tp, &raw, time);
-
-	if (normalized_is_zero(delta))
-		return;
-
 	tp_gesture_init_scroll(tp);
+
 	tp->gesture.state = GESTURE_STATE_SCROLL;
 }
 
@@ -1174,9 +1155,6 @@ tp_gesture_handle_state_scroll(struct tp_dispatch *tp, uint64_t time)
 {
 	struct device_float_coords raw;
 	struct normalized_coords delta;
-
-	if (tp->scroll.method != LIBINPUT_CONFIG_SCROLL_2FG)
-		return;
 
 	/* We may confuse a pinch for a scroll initially,
 	 * allow ourselves to correct our guess.
@@ -1205,20 +1183,16 @@ tp_gesture_handle_state_scroll(struct tp_dispatch *tp, uint64_t time)
 static void
 tp_gesture_handle_state_swipe_start(struct tp_dispatch *tp, uint64_t time)
 {
-	struct device_float_coords raw;
-	struct normalized_coords delta;
+	const struct normalized_coords zero = { 0.0, 0.0 };
+	struct device_float_coords raw = tp_get_average_touches_delta(tp);
+	tp_filter_motion(tp, &raw, time);
 
-	raw = tp_get_average_touches_delta(tp);
-	delta = tp_filter_motion(tp, &raw, time);
+	gesture_notify_swipe(&tp->device->base, time,
+			     LIBINPUT_EVENT_GESTURE_SWIPE_BEGIN,
+			     tp->gesture.finger_count,
+			     &zero, &zero);
 
-	if (!normalized_is_zero(delta) || !device_float_is_zero(raw)) {
-		const struct normalized_coords zero = { 0.0, 0.0 };
-		gesture_notify_swipe(&tp->device->base, time,
-				     LIBINPUT_EVENT_GESTURE_SWIPE_BEGIN,
-				     tp->gesture.finger_count,
-				     &zero, &zero);
-		tp->gesture.state = GESTURE_STATE_SWIPE;
-	}
+	tp->gesture.state = GESTURE_STATE_SWIPE;
 }
 
 static void
@@ -1243,36 +1217,12 @@ static void
 tp_gesture_handle_state_pinch_start(struct tp_dispatch *tp, uint64_t time)
 {
 	const struct normalized_coords zero = { 0.0, 0.0 };
-	double angle, angle_delta, distance, scale;
-	struct device_float_coords center, fdelta;
-	struct normalized_coords delta;
-
-	tp_gesture_get_pinch_info(tp, &distance, &angle, &center);
-
-	scale = distance / tp->gesture.initial_distance;
-
-	angle_delta = angle - tp->gesture.angle;
-	tp->gesture.angle = angle;
-	if (angle_delta > 180.0)
-		angle_delta -= 360.0;
-	else if (angle_delta < -180.0)
-		angle_delta += 360.0;
-
-	fdelta = device_float_delta(center, tp->gesture.center);
-	tp->gesture.center = center;
-
-	delta = tp_filter_motion(tp, &fdelta, time);
-
-	if (normalized_is_zero(delta) && device_float_is_zero(fdelta) &&
-	    scale == tp->gesture.prev_scale && angle_delta == 0.0)
-		return;
 
         gesture_notify_pinch(&tp->device->base, time,
                              LIBINPUT_EVENT_GESTURE_PINCH_BEGIN,
                              tp->gesture.finger_count,
                              &zero, &zero, 1.0, 0.0);
 
-	tp->gesture.prev_scale = scale;
 	tp->gesture.state = GESTURE_STATE_PINCH;
 }
 
