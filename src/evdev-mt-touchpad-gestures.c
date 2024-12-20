@@ -585,7 +585,6 @@ tp_gesture_handle_event_on_state_unknown(struct tp_dispatch *tp,
 		break;
 	case GESTURE_EVENT_PINCH_START:
 		libinput_timer_cancel(&tp->gesture.hold_timer);
-		tp_gesture_init_pinch(tp);
 		tp->gesture.state = GESTURE_STATE_PINCH_START;
 		break;
 	case GESTURE_EVENT_FINGER_DETECTED:
@@ -644,7 +643,6 @@ tp_gesture_handle_event_on_state_scroll_start(struct tp_dispatch *tp,
 	case GESTURE_EVENT_FINGER_SWITCH_TIMEOUT:
 		break;
 	case GESTURE_EVENT_PINCH_START:
-		tp_gesture_init_pinch(tp);
 		tp_gesture_cancel(tp, time);
 		tp->gesture.state = GESTURE_STATE_PINCH_START;
 		break;
@@ -675,7 +673,6 @@ tp_gesture_handle_event_on_state_scroll(struct tp_dispatch *tp,
 		tp_gesture_cancel(tp, time);
 		break;
 	case GESTURE_EVENT_PINCH_START:
-		tp_gesture_init_pinch(tp);
 		tp_gesture_cancel(tp, time);
 		tp->gesture.state = GESTURE_STATE_PINCH_START;
 		break;
@@ -1218,6 +1215,7 @@ tp_gesture_handle_state_pinch_start(struct tp_dispatch *tp, uint64_t time)
 {
 	const struct normalized_coords zero = { 0.0, 0.0 };
 
+	tp_gesture_init_pinch(tp);
         gesture_notify_pinch(&tp->device->base, time,
                              LIBINPUT_EVENT_GESTURE_PINCH_BEGIN,
                              tp->gesture.finger_count,
