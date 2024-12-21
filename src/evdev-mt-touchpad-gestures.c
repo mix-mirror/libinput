@@ -615,21 +615,16 @@ tp_gesture_handle_event_on_state_unknown(struct tp_dispatch *tp,
 					  tp->gesture.finger_count);
 		break;
 	case GESTURE_EVENT_POINTER_MOTION_START:
-		/* Don't cancel the hold timer. This pointer motion can end up
-		 * being recognised as hold and motion. */
 		tp->gesture.state = GESTURE_STATE_POINTER_MOTION;
 		break;
 	case GESTURE_EVENT_SCROLL_START:
-		libinput_timer_cancel(&tp->gesture.hold_timer);
 		tp_gesture_set_scroll_buildup(tp);
 		tp->gesture.state = GESTURE_STATE_SCROLL_START;
 		break;
 	case GESTURE_EVENT_SWIPE_START:
-		libinput_timer_cancel(&tp->gesture.hold_timer);
 		tp->gesture.state = GESTURE_STATE_SWIPE_START;
 		break;
 	case GESTURE_EVENT_PINCH_START:
-		libinput_timer_cancel(&tp->gesture.hold_timer);
 		tp->gesture.state = GESTURE_STATE_PINCH_START;
 		break;
 	case GESTURE_EVENT_FINGER_DETECTED:
