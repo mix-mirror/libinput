@@ -166,6 +166,11 @@ enum tp_gesture_state {
 	GESTURE_STATE_SWIPE,
 };
 
+enum tp_hold_state {
+	HOLD_STATE_NONE,
+	HOLD_STATE_HOLD,
+};
+
 enum tp_thumb_state {
 	THUMB_STATE_FINGER,
 	THUMB_STATE_JAILED,
@@ -363,6 +368,7 @@ struct tp_dispatch {
 		struct device_float_coords center;
 		struct libinput_timer hold_timer;
 		bool hold_enabled;
+		enum tp_hold_state hold_state;
 	} gesture;
 
 	struct {
