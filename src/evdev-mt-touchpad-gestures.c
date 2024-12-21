@@ -947,155 +947,6 @@ tp_gesture_tap_timeout(struct tp_dispatch *tp, uint64_t time)
 		tp_gesture_handle_event(tp, GESTURE_EVENT_HOLD_TIMEOUT, time);
 }
 
-static void
-tp_gesture_detect_motion_gestures(struct tp_dispatch *tp, uint64_t time)
-{
-	struct tp_touch *first = tp->gesture.touches[0],
-			*second = tp->gesture.touches[1],
-			*thumb;
-	uint32_t dir1, dir2;
-	struct device_coords delta;
-	struct phys_coords first_moved, second_moved, distance_mm;
-	double first_mm, second_mm; /* movement since gesture start in mm */
-	double thumb_mm, finger_mm;
-	double min_move = 1.5; /* min movement threshold in mm - count this touch */
-	double max_move = 4.0; /* max movement threshold in mm - ignore other touch */
-	bool is_hold_and_motion;
-
-	first_moved = tp_gesture_mm_moved(tp, first);
-	first_mm = hypot(first_moved.x, first_moved.y);
-
-	if (tp->gesture.finger_count == 1) {
-		if (!tp_has_pending_pointer_motion(tp, time))
-			return;
-
-		is_hold_and_motion = (first_mm < HOLD_AND_MOTION_THRESHOLD);
-
-		tp_gesture_handle_event(tp,
-					GESTURE_EVENT_POINTER_MOTION_START,
-					time);
-		return;
-	}
-
-	/* If we have more fingers than slots, we don't know where the
-	 * fingers are. Default to swipe */
-	if (tp->gesture.enabled && tp->gesture.finger_count > 2 &&
-	    tp->gesture.finger_count > tp->num_slots) {
-		tp_gesture_handle_event(tp, GESTURE_EVENT_SWIPE_START, time);
-		return;
-	}
-
-	/* Need more margin for error when there are more fingers */
-	max_move += 2.0 * (tp->gesture.finger_count - 2);
-	min_move += 0.5 * (tp->gesture.finger_count - 2);
-
-	second_moved = tp_gesture_mm_moved(tp, second);
-	second_mm = hypot(second_moved.x, second_moved.y);
-
-	delta.x = abs(first->point.x - second->point.x);
-	delta.y = abs(first->point.y - second->point.y);
-	distance_mm = evdev_device_unit_delta_to_mm(tp->device, &delta);
-
-	/* If both touches moved less than a mm, we cannot decide yet */
-	if (first_mm < 1 && second_mm < 1)
-		return;
-
-	/* Pick the thumb as the lowest point on the touchpad */
-	if (first->point.y > second->point.y) {
-		thumb = first;
-		thumb_mm = first_mm;
-		finger_mm = second_mm;
-	} else {
-		thumb = second;
-		thumb_mm = second_mm;
-		finger_mm = first_mm;
-	}
-
-	/* If both touches are within 7mm vertically and 40mm horizontally
-	 * past the timeout, assume scroll/swipe */
-	if ((!tp->gesture.enabled ||
-	     (distance_mm.x < 40.0 && distance_mm.y < 7.0)) &&
-	    time > (tp->gesture.initial_time + DEFAULT_GESTURE_SWIPE_TIMEOUT)) {
-		if (tp->gesture.finger_count == 2)
-			tp_gesture_handle_event(tp, GESTURE_EVENT_SCROLL_START, time);
-		else
-			tp_gesture_handle_event(tp, GESTURE_EVENT_SWIPE_START, time);
-
-		return;
-	}
-
-	/* If one touch exceeds the max_move threshold while the other has not
-	 * yet passed the min_move threshold, there is either a resting thumb,
-	 * or the user is doing "one-finger-scroll," where one touch stays in
-	 * place while the other moves.
-	 */
-	if (first_mm >= max_move || second_mm >= max_move) {
-		/* If thumb detection is enabled, and thumb is still while
-		 * finger moves, cancel gestures and mark lower as thumb.
-		 * This applies to all gestures (2, 3, 4+ fingers), but allows
-		 * more thumb motion on >2 finger gestures during detection.
-		 */
-		if (tp->thumb.detect_thumbs && thumb_mm < min_move) {
-			tp_thumb_suppress(tp, thumb);
-			tp_gesture_cancel(tp, time);
-			return;
-		}
-
-		/* If gestures detection is disabled, or if finger is still
-		 * while thumb moves, assume this is "one-finger scrolling."
-		 * This applies only to 2-finger gestures.
-		 */
-		if ((!tp->gesture.enabled || finger_mm < min_move) &&
-		    tp->gesture.finger_count == 2) {
-			tp_gesture_handle_event(tp, GESTURE_EVENT_SCROLL_START, time);
-			return;
-		}
-
-		/* If more than 2 fingers are involved, and the thumb moves
-		 * while the fingers stay still, assume a pinch if eligible.
-		 */
-		if (finger_mm < min_move &&
-		    tp->gesture.finger_count > 2 &&
-		    tp->gesture.enabled &&
-		    tp->thumb.pinch_eligible) {
-			tp_gesture_handle_event(tp, GESTURE_EVENT_PINCH_START, time);
-			return;
-		}
-	}
-
-	/* If either touch is still below the min_move threshold, we can't
-	 * tell what kind of gesture this is.
-	 */
-	if ((first_mm < min_move) || (second_mm < min_move))
-		return;
-
-	/* Both touches have exceeded the min_move threshold, so we have a
-	 * valid gesture. Update gesture initial time and get directions so
-	 * we know if it's a pinch or swipe/scroll.
-	 */
-	dir1 = tp_gesture_get_direction(tp, first);
-	dir2 = tp_gesture_get_direction(tp, second);
-
-	/* If we can't accurately detect pinches, or if the touches are moving
-	 * the same way, this is a scroll or swipe.
-	 */
-	if (tp->gesture.finger_count > tp->num_slots ||
-	    tp_gesture_same_directions(dir1, dir2)) {
-		if (tp->gesture.finger_count == 2) {
-			tp_gesture_handle_event(tp, GESTURE_EVENT_SCROLL_START, time);
-			return;
-		}
-
-		if (tp->gesture.enabled) {
-			tp_gesture_handle_event(tp, GESTURE_EVENT_SWIPE_START, time);
-			return;
-		}
-	}
-
-	/* If the touches are moving away from each other, this is a pinch */
-	tp_gesture_handle_event(tp, GESTURE_EVENT_PINCH_START, time);
-}
-
 static bool
 tp_gesture_is_pinch(struct tp_dispatch *tp)
 {
@@ -1121,6 +972,31 @@ tp_gesture_is_pinch(struct tp_dispatch *tp)
 		return false;
 
 	return true;
+}
+
+static void
+tp_gesture_detect_motion_gestures(struct tp_dispatch *tp, uint64_t time)
+{
+	if (tp->gesture.finger_count == 1) {
+		tp_gesture_handle_event(tp,
+					GESTURE_EVENT_POINTER_MOTION_START,
+					time);
+		return;
+	}
+
+	if (tp->gesture.finger_count == 2) {
+		if (tp_gesture_is_pinch(tp)) {
+			tp_gesture_handle_event(tp,
+						GESTURE_EVENT_PINCH_START,
+						time);
+			return;
+		}
+
+		tp_gesture_handle_event(tp, GESTURE_EVENT_SCROLL_START, time);
+		return;
+	}
+
+	tp_gesture_handle_event(tp, GESTURE_EVENT_SWIPE_START, time);
 }
 
 static void
