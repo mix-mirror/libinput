@@ -360,7 +360,7 @@ struct tp_dispatch {
 		unsigned int finger_count_pending;
 		struct libinput_timer finger_count_switch_timer;
 		enum tp_gesture_state state;
-		struct tp_touch *touches[2];
+		struct tp_touch *touches[4];
 		uint64_t initial_time;
 		double initial_distance;
 		double prev_scale;
