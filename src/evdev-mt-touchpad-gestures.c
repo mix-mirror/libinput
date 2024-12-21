@@ -522,6 +522,47 @@ tp_gesture_set_hold_timer(struct tp_dispatch *tp, uint64_t time)
 	}
 }
 
+static bool
+tp_gesture_is_hold(struct tp_dispatch *tp)
+{
+	unsigned int fcount = tp->gesture.finger_count;
+	struct phys_coords delta_avg_mm = {0.0, 0.0};
+
+	for (size_t i = 0; i < fcount; i++) {
+		struct tp_touch *t = tp->gesture.touches[i];
+
+		/* This can happen if the state changes
+		 * before handling GESTURE_STATE_NONE */
+		if (!t)
+			return false;
+
+		struct phys_coords delta_mm = tp_gesture_mm_moved(tp, t);
+		delta_avg_mm.x += delta_mm.x / fcount;
+		delta_avg_mm.y += delta_mm.y / fcount;
+	}
+
+	double moved_mm = hypot(delta_avg_mm.x, delta_avg_mm.y);
+
+	return moved_mm < HOLD_AND_MOTION_THRESHOLD;
+}
+
+static void
+tp_gesture_handle_hold_state(struct tp_dispatch *tp, uint64_t time)
+{
+	if (tp_gesture_is_hold(tp))
+		return;
+
+	if (tp->gesture.hold_state == HOLD_STATE_NONE) {
+		libinput_timer_cancel(&tp->gesture.hold_timer);
+	} else {
+		tp->gesture.hold_state = HOLD_STATE_NONE;
+		gesture_notify_hold_end(&tp->device->base,
+					time,
+					tp->gesture.finger_count,
+					true);
+	}
+}
+
 static void
 tp_gesture_handle_event_on_state_none(struct tp_dispatch *tp,
 				      enum gesture_event event,
@@ -1160,6 +1201,8 @@ tp_gesture_handle_state_unknown(struct tp_dispatch *tp, uint64_t time,
 {
 	if (!ignore_motion)
 		tp_gesture_detect_motion_gestures(tp, time);
+
+	tp_gesture_handle_hold_state(tp, time);
 }
 
 static void
@@ -1167,6 +1210,8 @@ tp_gesture_handle_state_pointer_motion(struct tp_dispatch *tp, uint64_t time)
 {
 	if (tp->queued & TOUCHPAD_EVENT_MOTION)
 		tp_gesture_post_pointer_motion(tp, time);
+
+	tp_gesture_handle_hold_state(tp, time);
 }
 
 static void
@@ -1185,6 +1230,8 @@ tp_gesture_handle_state_scroll(struct tp_dispatch *tp, uint64_t time)
 {
 	struct device_float_coords raw;
 	struct normalized_coords delta;
+
+	tp_gesture_handle_hold_state(tp, time);
 
 	/* We may confuse a pinch for a scroll initially,
 	 * allow ourselves to correct our guess.
@@ -1231,6 +1278,8 @@ tp_gesture_handle_state_swipe(struct tp_dispatch *tp, uint64_t time)
 	struct device_float_coords raw;
 	struct normalized_coords delta, unaccel;
 
+	tp_gesture_handle_hold_state(tp, time);
+
 	raw = tp_get_average_touches_delta(tp);
 	delta = tp_filter_motion(tp, &raw, time);
 
@@ -1263,6 +1312,8 @@ tp_gesture_handle_state_pinch(struct tp_dispatch *tp, uint64_t time)
 	double angle, angle_delta, distance, scale;
 	struct device_float_coords center, fdelta;
 	struct normalized_coords delta, unaccel;
+
+	tp_gesture_handle_hold_state(tp, time);
 
 	tp_gesture_get_pinch_info(tp, &distance, &angle, &center);
 
