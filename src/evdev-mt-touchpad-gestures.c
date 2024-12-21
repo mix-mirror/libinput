@@ -638,10 +638,6 @@ tp_gesture_handle_event_on_state_pointer_motion(struct tp_dispatch *tp,
 						enum gesture_event event,
 						uint64_t time)
 {
-	struct tp_touch *first;
-	struct phys_coords first_moved;
-	double first_mm;
-
 	switch(event) {
 	case GESTURE_EVENT_RESET:
 	case GESTURE_EVENT_END:
