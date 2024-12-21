@@ -652,6 +652,8 @@ tp_gesture_handle_event_on_state_pointer_motion(struct tp_dispatch *tp,
 					  tp->gesture.finger_count);
 		break;
 	case GESTURE_EVENT_FINGER_SWITCH_TIMEOUT:
+		tp_gesture_cancel(tp, time);
+		break;
 	case GESTURE_EVENT_FINGER_DETECTED:
 	case GESTURE_EVENT_POINTER_MOTION_START:
 	case GESTURE_EVENT_SCROLL_START:
