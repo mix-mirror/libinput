@@ -1068,6 +1068,9 @@ static void
 tp_gesture_handle_state_unknown(struct tp_dispatch *tp, uint64_t time,
 				bool ignore_motion)
 {
+	if (!tp_has_pending_pointer_motion(tp, time))
+		return;
+
 	if (!ignore_motion)
 		tp_gesture_detect_motion_gestures(tp, time);
 
@@ -1077,9 +1080,10 @@ tp_gesture_handle_state_unknown(struct tp_dispatch *tp, uint64_t time,
 static void
 tp_gesture_handle_state_pointer_motion(struct tp_dispatch *tp, uint64_t time)
 {
-	if (tp->queued & TOUCHPAD_EVENT_MOTION)
-		tp_gesture_post_pointer_motion(tp, time);
+	if (!tp_has_pending_pointer_motion(tp, time))
+		return;
 
+	tp_gesture_post_pointer_motion(tp, time);
 	tp_gesture_handle_hold_state(tp, time);
 }
 
@@ -1101,6 +1105,9 @@ tp_gesture_handle_state_scroll(struct tp_dispatch *tp, uint64_t time)
 	struct normalized_coords delta;
 
 	tp_gesture_handle_hold_state(tp, time);
+
+	if (!tp_has_pending_pointer_motion(tp, time))
+		return;
 
 	/* We may confuse a pinch for a scroll initially,
 	 * allow ourselves to correct our guess.
@@ -1149,6 +1156,9 @@ tp_gesture_handle_state_swipe(struct tp_dispatch *tp, uint64_t time)
 
 	tp_gesture_handle_hold_state(tp, time);
 
+	if (!tp_has_pending_pointer_motion(tp, time))
+		return;
+
 	raw = tp_get_average_touches_delta(tp);
 	delta = tp_filter_motion(tp, &raw, time);
 
@@ -1183,6 +1193,9 @@ tp_gesture_handle_state_pinch(struct tp_dispatch *tp, uint64_t time)
 	struct normalized_coords delta, unaccel;
 
 	tp_gesture_handle_hold_state(tp, time);
+
+	if (!tp_has_pending_pointer_motion(tp, time))
+		return;
 
 	tp_gesture_get_pinch_info(tp, &distance, &angle, &center);
 
