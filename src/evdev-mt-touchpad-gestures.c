@@ -522,6 +522,18 @@ tp_gesture_set_hold_timer(struct tp_dispatch *tp, uint64_t time)
 	}
 }
 
+static void
+tp_gesture_hold_end(struct tp_dispatch *tp, uint64_t time, bool cancelled)
+{
+	if (tp->gesture.hold_state == HOLD_STATE_HOLD) {
+		tp->gesture.hold_state = HOLD_STATE_NONE;
+		gesture_notify_hold_end(&tp->device->base,
+					time,
+					tp->gesture.finger_count,
+					cancelled);
+	}
+}
+
 static bool
 tp_gesture_is_hold(struct tp_dispatch *tp)
 {
@@ -552,15 +564,10 @@ tp_gesture_handle_hold_state(struct tp_dispatch *tp, uint64_t time)
 	if (tp_gesture_is_hold(tp))
 		return;
 
-	if (tp->gesture.hold_state == HOLD_STATE_NONE) {
+	if (tp->gesture.hold_state == HOLD_STATE_NONE)
 		libinput_timer_cancel(&tp->gesture.hold_timer);
-	} else {
-		tp->gesture.hold_state = HOLD_STATE_NONE;
-		gesture_notify_hold_end(&tp->device->base,
-					time,
-					tp->gesture.finger_count,
-					true);
-	}
+	else
+		tp_gesture_hold_end(tp, time, true);
 }
 
 static void
@@ -1320,13 +1327,7 @@ tp_gesture_stop_twofinger_scroll(struct tp_dispatch *tp, uint64_t time)
 static void
 tp_gesture_end(struct tp_dispatch *tp, uint64_t time, enum gesture_cancelled cancelled)
 {
-	if (tp->gesture.hold_state == HOLD_STATE_HOLD) {
-		tp->gesture.hold_state = HOLD_STATE_NONE;
-		gesture_notify_hold_end(&tp->device->base,
-					time,
-					tp->gesture.finger_count,
-					cancelled);
-	}
+	tp_gesture_hold_end(tp, time, cancelled);
 
 	switch (tp->gesture.state) {
 	case GESTURE_STATE_NONE:
