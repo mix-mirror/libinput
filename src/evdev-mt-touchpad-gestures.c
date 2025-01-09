@@ -1436,6 +1436,8 @@ tp_gesture_update_finger_state(struct tp_dispatch *tp, uint64_t time)
 			tp->gesture.finger_count_pending = 0;
 		/* Immediately switch to new mode to avoid initial latency */
 		} else if (!tp_gesture_has_started(tp)) {
+			tp_gesture_hold_end(tp, time, true);
+
 			tp->gesture.finger_count = active_touches;
 			tp->gesture.finger_count_pending = 0;
 			/* If in UNKNOWN or POINTER_MOTION state, go back to
