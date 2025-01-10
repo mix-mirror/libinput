@@ -995,14 +995,14 @@ tp_gesture_detect_motion_gestures(struct tp_dispatch *tp, uint64_t time)
 		return;
 	}
 
-	if (tp->gesture.finger_count == 2) {
-		if (tp_gesture_is_pinch(tp)) {
-			tp_gesture_handle_event(tp,
-						GESTURE_EVENT_PINCH_START,
-						time);
-			return;
-		}
+	if (tp_gesture_is_pinch(tp)) {
+		tp_gesture_handle_event(tp,
+					GESTURE_EVENT_PINCH_START,
+					time);
+		return;
+	}
 
+	if (tp->gesture.finger_count == 2) {
 		tp_gesture_handle_event(tp, GESTURE_EVENT_SCROLL_START, time);
 		return;
 	}
