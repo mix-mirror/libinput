@@ -100,7 +100,7 @@ gesture_event_to_str(enum gesture_event event)
 }
 
 static struct device_float_coords
-tp_get_touches_delta(struct tp_dispatch *tp, bool average)
+tp_get_touches_delta(struct tp_dispatch *tp, bool average, bool absolute)
 {
 	struct tp_touch *t;
 	unsigned int i, nactive = 0;
@@ -118,6 +118,11 @@ tp_get_touches_delta(struct tp_dispatch *tp, bool average)
 			struct device_coords d;
 
 			d = tp_get_delta(t);
+
+			if (absolute) {
+				d.x = abs(d.x);
+				d.y = abs(d.y);
+			}
 
 			delta.x += d.x;
 			delta.y += d.y;
@@ -148,13 +153,19 @@ tp_gesture_init_scroll(struct tp_dispatch *tp)
 static inline struct device_float_coords
 tp_get_combined_touches_delta(struct tp_dispatch *tp)
 {
-	return tp_get_touches_delta(tp, false);
+	return tp_get_touches_delta(tp, false, false);
 }
 
 static inline struct device_float_coords
 tp_get_average_touches_delta(struct tp_dispatch *tp)
 {
-	return tp_get_touches_delta(tp, true);
+	return tp_get_touches_delta(tp, true, false);
+}
+
+static inline struct device_float_coords
+tp_get_average_touches_abs_delta(struct tp_dispatch *tp)
+{
+	return tp_get_touches_delta(tp, true, true);
 }
 
 static struct device_float_coords
@@ -174,7 +185,7 @@ tp_get_raw_pointer_motion(struct tp_dispatch *tp)
 static bool
 tp_has_pending_pointer_motion(struct tp_dispatch *tp, uint64_t time)
 {
-	struct device_float_coords raw;
+	struct device_float_coords distance;
 
 	if (!(tp->queued & TOUCHPAD_EVENT_MOTION))
 		return false;
@@ -184,8 +195,8 @@ tp_has_pending_pointer_motion(struct tp_dispatch *tp, uint64_t time)
 	 * it twice (here and in tp_gesture_post_pointer_motion) with the same
 	 * event.
 	 */
-	raw = tp_get_raw_pointer_motion(tp);
-	return !device_float_is_zero(raw);
+	distance = tp_get_average_touches_abs_delta(tp);
+	return !device_float_is_zero(distance);
 }
 
 static void
