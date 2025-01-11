@@ -363,6 +363,7 @@ struct tp_dispatch {
 		struct tp_touch *touches[4];
 		uint64_t initial_time;
 		struct {
+			struct tp_touch *touches[2];
 			double initial_distance;
 			double prev_scale;
 			double angle;
