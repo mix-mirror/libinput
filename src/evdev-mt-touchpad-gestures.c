@@ -312,10 +312,10 @@ static inline void
 tp_gesture_init_pinch(struct tp_dispatch *tp)
 {
 	tp_gesture_get_pinch_info(tp,
-				  &tp->gesture.initial_distance,
-				  &tp->gesture.angle,
-				  &tp->gesture.center);
-	tp->gesture.prev_scale = 1.0;
+				  &tp->gesture.pinch.initial_distance,
+				  &tp->gesture.pinch.angle,
+				  &tp->gesture.pinch.center);
+	tp->gesture.pinch.prev_scale = 1.0;
 }
 
 static void
@@ -794,7 +794,7 @@ tp_gesture_handle_event_on_state_pinch(struct tp_dispatch *tp,
 		bool cancelled = event == GESTURE_EVENT_CANCEL;
 		gesture_notify_pinch_end(&tp->device->base, time,
 					 tp->gesture.finger_count,
-					 tp->gesture.prev_scale,
+					 tp->gesture.pinch.prev_scale,
 					 cancelled);
 		libinput_timer_cancel(&tp->gesture.hold_timer);
 		tp->gesture.state = GESTURE_STATE_NONE;
@@ -1165,22 +1165,22 @@ tp_gesture_handle_state_pinch(struct tp_dispatch *tp, uint64_t time)
 
 	tp_gesture_get_pinch_info(tp, &distance, &angle, &center);
 
-	scale = distance / tp->gesture.initial_distance;
+	scale = distance / tp->gesture.pinch.initial_distance;
 
-	angle_delta = angle - tp->gesture.angle;
-	tp->gesture.angle = angle;
+	angle_delta = angle - tp->gesture.pinch.angle;
+	tp->gesture.pinch.angle = angle;
 	if (angle_delta > 180.0)
 		angle_delta -= 360.0;
 	else if (angle_delta < -180.0)
 		angle_delta += 360.0;
 
-	fdelta = device_float_delta(center, tp->gesture.center);
-	tp->gesture.center = center;
+	fdelta = device_float_delta(center, tp->gesture.pinch.center);
+	tp->gesture.pinch.center = center;
 
 	delta = tp_filter_motion(tp, &fdelta, time);
 
 	if (normalized_is_zero(delta) && device_float_is_zero(fdelta) &&
-	    scale == tp->gesture.prev_scale && angle_delta == 0.0)
+	    scale == tp->gesture.pinch.prev_scale && angle_delta == 0.0)
 		return;
 
 	unaccel = tp_filter_motion_unaccelerated(tp, &fdelta, time);
@@ -1189,7 +1189,7 @@ tp_gesture_handle_state_pinch(struct tp_dispatch *tp, uint64_t time)
 			     tp->gesture.finger_count,
 			     &delta, &unaccel, scale, angle_delta);
 
-	tp->gesture.prev_scale = scale;
+	tp->gesture.pinch.prev_scale = scale;
 }
 
 static void

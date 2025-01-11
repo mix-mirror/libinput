@@ -362,10 +362,12 @@ struct tp_dispatch {
 		enum tp_gesture_state state;
 		struct tp_touch *touches[4];
 		uint64_t initial_time;
-		double initial_distance;
-		double prev_scale;
-		double angle;
-		struct device_float_coords center;
+		struct {
+			double initial_distance;
+			double prev_scale;
+			double angle;
+			struct device_float_coords center;
+		} pinch;
 		struct libinput_timer hold_timer;
 		bool hold_enabled;
 		enum tp_hold_state hold_state;
