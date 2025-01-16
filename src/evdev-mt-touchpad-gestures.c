@@ -632,6 +632,7 @@ tp_gesture_handle_event_on_state_unknown(struct tp_dispatch *tp,
 		break;
 	case GESTURE_EVENT_PINCH_START:
 		tp->gesture.state = GESTURE_STATE_PINCH_START;
+		tp_gesture_hold_end(tp, time, true);
 		break;
 	case GESTURE_EVENT_FINGER_DETECTED:
 		log_gesture_bug(tp, event);
