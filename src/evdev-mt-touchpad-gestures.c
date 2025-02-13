@@ -49,7 +49,6 @@ enum gesture_event {
 	GESTURE_EVENT_FINGER_DETECTED,
 	GESTURE_EVENT_FINGER_SWITCH_TIMEOUT,
 	GESTURE_EVENT_HOLD_TIMEOUT,
-	GESTURE_EVENT_HOLD_AND_MOTION_START,
 	GESTURE_EVENT_POINTER_MOTION_START,
 	GESTURE_EVENT_SCROLL_START,
 	GESTURE_EVENT_SWIPE_START,
@@ -71,8 +70,6 @@ gesture_state_to_str(enum tp_gesture_state state)
 	switch (state) {
 	CASE_RETURN_STRING(GESTURE_STATE_NONE);
 	CASE_RETURN_STRING(GESTURE_STATE_UNKNOWN);
-	CASE_RETURN_STRING(GESTURE_STATE_HOLD);
-	CASE_RETURN_STRING(GESTURE_STATE_HOLD_AND_MOTION);
 	CASE_RETURN_STRING(GESTURE_STATE_POINTER_MOTION);
 	CASE_RETURN_STRING(GESTURE_STATE_SCROLL_START);
 	CASE_RETURN_STRING(GESTURE_STATE_SCROLL);
@@ -94,7 +91,6 @@ gesture_event_to_str(enum gesture_event event)
 	CASE_RETURN_STRING(GESTURE_EVENT_FINGER_DETECTED);
 	CASE_RETURN_STRING(GESTURE_EVENT_FINGER_SWITCH_TIMEOUT);
 	CASE_RETURN_STRING(GESTURE_EVENT_HOLD_TIMEOUT);
-	CASE_RETURN_STRING(GESTURE_EVENT_HOLD_AND_MOTION_START);
 	CASE_RETURN_STRING(GESTURE_EVENT_POINTER_MOTION_START);
 	CASE_RETURN_STRING(GESTURE_EVENT_SCROLL_START);
 	CASE_RETURN_STRING(GESTURE_EVENT_SWIPE_START);
@@ -104,7 +100,7 @@ gesture_event_to_str(enum gesture_event event)
 }
 
 static struct device_float_coords
-tp_get_touches_delta(struct tp_dispatch *tp, bool average)
+tp_get_touches_delta(struct tp_dispatch *tp, bool average, bool absolute)
 {
 	struct tp_touch *t;
 	unsigned int i, nactive = 0;
@@ -122,6 +118,11 @@ tp_get_touches_delta(struct tp_dispatch *tp, bool average)
 			struct device_coords d;
 
 			d = tp_get_delta(t);
+
+			if (absolute) {
+				d.x = abs(d.x);
+				d.y = abs(d.y);
+			}
 
 			delta.x += d.x;
 			delta.y += d.y;
@@ -152,13 +153,19 @@ tp_gesture_init_scroll(struct tp_dispatch *tp)
 static inline struct device_float_coords
 tp_get_combined_touches_delta(struct tp_dispatch *tp)
 {
-	return tp_get_touches_delta(tp, false);
+	return tp_get_touches_delta(tp, false, false);
 }
 
 static inline struct device_float_coords
 tp_get_average_touches_delta(struct tp_dispatch *tp)
 {
-	return tp_get_touches_delta(tp, true);
+	return tp_get_touches_delta(tp, true, false);
+}
+
+static inline struct device_float_coords
+tp_get_average_touches_abs_delta(struct tp_dispatch *tp)
+{
+	return tp_get_touches_delta(tp, true, true);
 }
 
 static struct device_float_coords
@@ -178,7 +185,7 @@ tp_get_raw_pointer_motion(struct tp_dispatch *tp)
 static bool
 tp_has_pending_pointer_motion(struct tp_dispatch *tp, uint64_t time)
 {
-	struct device_float_coords raw;
+	struct device_float_coords distance;
 
 	if (!(tp->queued & TOUCHPAD_EVENT_MOTION))
 		return false;
@@ -188,8 +195,8 @@ tp_has_pending_pointer_motion(struct tp_dispatch *tp, uint64_t time)
 	 * it twice (here and in tp_gesture_post_pointer_motion) with the same
 	 * event.
 	 */
-	raw = tp_get_raw_pointer_motion(tp);
-	return !device_float_is_zero(raw);
+	distance = tp_get_average_touches_abs_delta(tp);
+	return !device_float_is_zero(distance);
 }
 
 static void
@@ -270,18 +277,6 @@ tp_gesture_mm_moved(struct tp_dispatch *tp, struct tp_touch *t)
 	return evdev_device_unit_delta_to_mm(tp->device, &delta);
 }
 
-static uint32_t
-tp_gesture_get_direction(struct tp_dispatch *tp, struct tp_touch *touch)
-{
-	struct phys_coords mm;
-	struct device_float_coords delta;
-
-	delta = device_delta(touch->point, touch->gesture.initial);
-	mm = tp_phys_delta(tp, delta);
-
-	return phys_get_direction(mm);
-}
-
 static void
 tp_gesture_get_pinch_info(struct tp_dispatch *tp,
 			  double *distance,
@@ -290,8 +285,8 @@ tp_gesture_get_pinch_info(struct tp_dispatch *tp,
 {
 	struct normalized_coords normalized;
 	struct device_float_coords delta;
-	struct tp_touch *first = tp->gesture.touches[0],
-			*second = tp->gesture.touches[1];
+	struct tp_touch *first = tp->gesture.pinch.touches[0],
+			*second = tp->gesture.pinch.touches[1];
 
 	delta = device_delta(first->point, second->point);
 	normalized = tp_normalize_delta(tp, delta);
@@ -305,10 +300,10 @@ static inline void
 tp_gesture_init_pinch(struct tp_dispatch *tp)
 {
 	tp_gesture_get_pinch_info(tp,
-				  &tp->gesture.initial_distance,
-				  &tp->gesture.angle,
-				  &tp->gesture.center);
-	tp->gesture.prev_scale = 1.0;
+				  &tp->gesture.pinch.initial_distance,
+				  &tp->gesture.pinch.angle,
+				  &tp->gesture.pinch.center);
+	tp->gesture.pinch.prev_scale = 1.0;
 }
 
 static void
@@ -527,6 +522,54 @@ tp_gesture_set_hold_timer(struct tp_dispatch *tp, uint64_t time)
 }
 
 static void
+tp_gesture_hold_end(struct tp_dispatch *tp, uint64_t time, bool cancelled)
+{
+	if (tp->gesture.hold_state == HOLD_STATE_HOLD) {
+		tp->gesture.hold_state = HOLD_STATE_NONE;
+		gesture_notify_hold_end(&tp->device->base,
+					time,
+					tp->gesture.finger_count,
+					cancelled);
+	}
+}
+
+static bool
+tp_gesture_is_hold(struct tp_dispatch *tp)
+{
+	unsigned int fcount = tp->gesture.finger_count;
+	struct phys_coords delta_avg_mm = {0.0, 0.0};
+
+	for (size_t i = 0; i < fcount; i++) {
+		struct tp_touch *t = tp->gesture.touches[i];
+
+		/* This can happen if the state changes
+		 * before handling GESTURE_STATE_NONE */
+		if (!t)
+			return false;
+
+		struct phys_coords delta_mm = tp_gesture_mm_moved(tp, t);
+		delta_avg_mm.x += delta_mm.x / fcount;
+		delta_avg_mm.y += delta_mm.y / fcount;
+	}
+
+	double moved_mm = hypot(delta_avg_mm.x, delta_avg_mm.y);
+
+	return moved_mm < HOLD_AND_MOTION_THRESHOLD;
+}
+
+static void
+tp_gesture_handle_hold_state(struct tp_dispatch *tp, uint64_t time)
+{
+	if (tp_gesture_is_hold(tp))
+		return;
+
+	if (tp->gesture.hold_state == HOLD_STATE_NONE)
+		libinput_timer_cancel(&tp->gesture.hold_timer);
+	else
+		tp_gesture_hold_end(tp, time, true);
+}
+
+static void
 tp_gesture_handle_event_on_state_none(struct tp_dispatch *tp,
 				      enum gesture_event event,
 				      uint64_t time)
@@ -550,7 +593,6 @@ tp_gesture_handle_event_on_state_none(struct tp_dispatch *tp,
 		tp->gesture.state = GESTURE_STATE_SCROLL_START;
 		break;
 	case GESTURE_EVENT_FINGER_SWITCH_TIMEOUT:
-	case GESTURE_EVENT_HOLD_AND_MOTION_START:
 	case GESTURE_EVENT_SWIPE_START:
 	case GESTURE_EVENT_PINCH_START:
 		log_gesture_bug(tp, event);
@@ -573,116 +615,26 @@ tp_gesture_handle_event_on_state_unknown(struct tp_dispatch *tp,
 	case GESTURE_EVENT_FINGER_SWITCH_TIMEOUT:
 		break;
 	case GESTURE_EVENT_HOLD_TIMEOUT:
-		tp->gesture.state = GESTURE_STATE_HOLD;
-		gesture_notify_hold_begin(&tp->device->base, time,
+		tp->gesture.hold_state = HOLD_STATE_HOLD;
+		gesture_notify_hold_begin(&tp->device->base,
+					  time,
 					  tp->gesture.finger_count);
 		break;
 	case GESTURE_EVENT_POINTER_MOTION_START:
-		/* Don't cancel the hold timer. This pointer motion can end up
-		 * being recognised as hold and motion. */
-		tp->gesture.state = GESTURE_STATE_POINTER_MOTION;
-		break;
-	case GESTURE_EVENT_SCROLL_START:
-		libinput_timer_cancel(&tp->gesture.hold_timer);
-		tp_gesture_set_scroll_buildup(tp);
-		tp->gesture.state = GESTURE_STATE_SCROLL_START;
-		break;
-	case GESTURE_EVENT_SWIPE_START:
-		libinput_timer_cancel(&tp->gesture.hold_timer);
-		tp->gesture.state = GESTURE_STATE_SWIPE_START;
-		break;
-	case GESTURE_EVENT_PINCH_START:
-		libinput_timer_cancel(&tp->gesture.hold_timer);
-		tp_gesture_init_pinch(tp);
-		tp->gesture.state = GESTURE_STATE_PINCH_START;
-		break;
-	case GESTURE_EVENT_HOLD_AND_MOTION_START:
-	case GESTURE_EVENT_FINGER_DETECTED:
-		log_gesture_bug(tp, event);
-		break;
-	}
-}
-
-static void
-tp_gesture_handle_event_on_state_hold(struct tp_dispatch *tp,
-				      enum gesture_event event,
-				      uint64_t time)
-{
-	switch(event) {
-	case GESTURE_EVENT_RESET:
-		log_gesture_bug(tp, event);
-		break;
-	case GESTURE_EVENT_END:
-	case GESTURE_EVENT_CANCEL: {
-		bool cancelled = event == GESTURE_EVENT_CANCEL;
-		gesture_notify_hold_end(&tp->device->base, time,
-					tp->gesture.finger_count, cancelled);
-		libinput_timer_cancel(&tp->gesture.hold_timer);
-		tp->gesture.state = GESTURE_STATE_NONE;
-		break;
-	}
-	case GESTURE_EVENT_FINGER_SWITCH_TIMEOUT:
-		tp_gesture_cancel(tp, time);
-		break;
-	case GESTURE_EVENT_HOLD_AND_MOTION_START:
-		tp->gesture.state = GESTURE_STATE_HOLD_AND_MOTION;
-		break;
-	case GESTURE_EVENT_POINTER_MOTION_START:
-		tp_gesture_cancel(tp, time);
 		tp->gesture.state = GESTURE_STATE_POINTER_MOTION;
 		break;
 	case GESTURE_EVENT_SCROLL_START:
 		tp_gesture_set_scroll_buildup(tp);
-		tp_gesture_cancel(tp, time);
 		tp->gesture.state = GESTURE_STATE_SCROLL_START;
 		break;
 	case GESTURE_EVENT_SWIPE_START:
-		tp_gesture_cancel(tp, time);
 		tp->gesture.state = GESTURE_STATE_SWIPE_START;
 		break;
 	case GESTURE_EVENT_PINCH_START:
-		tp_gesture_cancel(tp, time);
-		tp_gesture_init_pinch(tp);
 		tp->gesture.state = GESTURE_STATE_PINCH_START;
+		tp_gesture_hold_end(tp, time, true);
 		break;
-	case GESTURE_EVENT_HOLD_TIMEOUT:
 	case GESTURE_EVENT_FINGER_DETECTED:
-		log_gesture_bug(tp, event);
-		break;
-	}
-}
-
-static void
-tp_gesture_handle_event_on_state_hold_and_motion(struct tp_dispatch *tp,
-						 enum gesture_event event,
-						 uint64_t time)
-{
-	switch(event) {
-	case GESTURE_EVENT_RESET:
-		log_gesture_bug(tp, event);
-		break;
-	case GESTURE_EVENT_END:
-	case GESTURE_EVENT_CANCEL: {
-		bool cancelled = event == GESTURE_EVENT_CANCEL;
-		gesture_notify_hold_end(&tp->device->base, time,
-					tp->gesture.finger_count, cancelled);
-		libinput_timer_cancel(&tp->gesture.hold_timer);
-		tp->gesture.state = GESTURE_STATE_NONE;
-		break;
-	}
-	case GESTURE_EVENT_FINGER_SWITCH_TIMEOUT:
-		tp_gesture_cancel(tp, time);
-		break;
-	case GESTURE_EVENT_POINTER_MOTION_START:
-		tp_gesture_cancel(tp, time);
-		tp->gesture.state = GESTURE_STATE_POINTER_MOTION;
-		break;
-	case GESTURE_EVENT_HOLD_AND_MOTION_START:
-	case GESTURE_EVENT_FINGER_DETECTED:
-	case GESTURE_EVENT_HOLD_TIMEOUT:
-	case GESTURE_EVENT_SCROLL_START:
-	case GESTURE_EVENT_SWIPE_START:
-	case GESTURE_EVENT_PINCH_START:
 		log_gesture_bug(tp, event);
 		break;
 	}
@@ -693,10 +645,6 @@ tp_gesture_handle_event_on_state_pointer_motion(struct tp_dispatch *tp,
 						enum gesture_event event,
 						uint64_t time)
 {
-	struct tp_touch *first;
-	struct phys_coords first_moved;
-	double first_mm;
-
 	switch(event) {
 	case GESTURE_EVENT_RESET:
 	case GESTURE_EVENT_END:
@@ -705,21 +653,14 @@ tp_gesture_handle_event_on_state_pointer_motion(struct tp_dispatch *tp,
 		tp->gesture.state = GESTURE_STATE_NONE;
 		break;
 	case GESTURE_EVENT_HOLD_TIMEOUT:
-		if (tp->gesture.finger_count != 1)
-			break;
-
-		first = tp->gesture.touches[0];
-		first_moved = tp_gesture_mm_moved(tp, first);
-		first_mm = hypot(first_moved.x, first_moved.y);
-
-		if (first_mm < HOLD_AND_MOTION_THRESHOLD) {
-			tp->gesture.state = GESTURE_STATE_HOLD_AND_MOTION;
-			gesture_notify_hold_begin(&tp->device->base, time,
-					          tp->gesture.finger_count);
-		}
+		tp->gesture.hold_state = HOLD_STATE_HOLD;
+		gesture_notify_hold_begin(&tp->device->base,
+					  time,
+					  tp->gesture.finger_count);
 		break;
 	case GESTURE_EVENT_FINGER_SWITCH_TIMEOUT:
-	case GESTURE_EVENT_HOLD_AND_MOTION_START:
+		tp_gesture_cancel(tp, time);
+		break;
 	case GESTURE_EVENT_FINGER_DETECTED:
 	case GESTURE_EVENT_POINTER_MOTION_START:
 	case GESTURE_EVENT_SCROLL_START:
@@ -743,15 +684,19 @@ tp_gesture_handle_event_on_state_scroll_start(struct tp_dispatch *tp,
 		tp->gesture.state = GESTURE_STATE_NONE;
 		break;
 	case GESTURE_EVENT_FINGER_SWITCH_TIMEOUT:
+		tp_gesture_cancel(tp, time);
 		break;
 	case GESTURE_EVENT_PINCH_START:
-		tp_gesture_init_pinch(tp);
 		tp_gesture_cancel(tp, time);
 		tp->gesture.state = GESTURE_STATE_PINCH_START;
 		break;
-	case GESTURE_EVENT_HOLD_AND_MOTION_START:
-	case GESTURE_EVENT_FINGER_DETECTED:
 	case GESTURE_EVENT_HOLD_TIMEOUT:
+		tp->gesture.hold_state = HOLD_STATE_HOLD;
+		gesture_notify_hold_begin(&tp->device->base,
+					  time,
+					  tp->gesture.finger_count);
+		break;
+	case GESTURE_EVENT_FINGER_DETECTED:
 	case GESTURE_EVENT_POINTER_MOTION_START:
 	case GESTURE_EVENT_SCROLL_START:
 	case GESTURE_EVENT_SWIPE_START:
@@ -777,13 +722,16 @@ tp_gesture_handle_event_on_state_scroll(struct tp_dispatch *tp,
 		tp_gesture_cancel(tp, time);
 		break;
 	case GESTURE_EVENT_PINCH_START:
-		tp_gesture_init_pinch(tp);
 		tp_gesture_cancel(tp, time);
 		tp->gesture.state = GESTURE_STATE_PINCH_START;
 		break;
-	case GESTURE_EVENT_HOLD_AND_MOTION_START:
-	case GESTURE_EVENT_FINGER_DETECTED:
 	case GESTURE_EVENT_HOLD_TIMEOUT:
+		tp->gesture.hold_state = HOLD_STATE_HOLD;
+		gesture_notify_hold_begin(&tp->device->base,
+					  time,
+					  tp->gesture.finger_count);
+		break;
+	case GESTURE_EVENT_FINGER_DETECTED:
 	case GESTURE_EVENT_POINTER_MOTION_START:
 	case GESTURE_EVENT_SCROLL_START:
 	case GESTURE_EVENT_SWIPE_START:
@@ -803,11 +751,15 @@ tp_gesture_handle_event_on_state_pinch_start(struct tp_dispatch *tp,
 	case GESTURE_EVENT_CANCEL:
 		libinput_timer_cancel(&tp->gesture.hold_timer);
 		break;
+	case GESTURE_EVENT_HOLD_TIMEOUT:
+		tp->gesture.hold_state = HOLD_STATE_HOLD;
+		gesture_notify_hold_begin(&tp->device->base,
+					  time,
+					  tp->gesture.finger_count);
+		break;
 	case GESTURE_EVENT_FINGER_SWITCH_TIMEOUT:
 		break;
-	case GESTURE_EVENT_HOLD_AND_MOTION_START:
 	case GESTURE_EVENT_FINGER_DETECTED:
-	case GESTURE_EVENT_HOLD_TIMEOUT:
 	case GESTURE_EVENT_POINTER_MOTION_START:
 	case GESTURE_EVENT_SCROLL_START:
 	case GESTURE_EVENT_SWIPE_START:
@@ -831,7 +783,7 @@ tp_gesture_handle_event_on_state_pinch(struct tp_dispatch *tp,
 		bool cancelled = event == GESTURE_EVENT_CANCEL;
 		gesture_notify_pinch_end(&tp->device->base, time,
 					 tp->gesture.finger_count,
-					 tp->gesture.prev_scale,
+					 tp->gesture.pinch.prev_scale,
 					 cancelled);
 		libinput_timer_cancel(&tp->gesture.hold_timer);
 		tp->gesture.state = GESTURE_STATE_NONE;
@@ -840,9 +792,13 @@ tp_gesture_handle_event_on_state_pinch(struct tp_dispatch *tp,
 	case GESTURE_EVENT_FINGER_SWITCH_TIMEOUT:
 		tp_gesture_cancel(tp, time);
 		break;
-	case GESTURE_EVENT_HOLD_AND_MOTION_START:
-	case GESTURE_EVENT_FINGER_DETECTED:
 	case GESTURE_EVENT_HOLD_TIMEOUT:
+		tp->gesture.hold_state = HOLD_STATE_HOLD;
+		gesture_notify_hold_begin(&tp->device->base,
+					  time,
+					  tp->gesture.finger_count);
+		break;
+	case GESTURE_EVENT_FINGER_DETECTED:
 	case GESTURE_EVENT_POINTER_MOTION_START:
 	case GESTURE_EVENT_SCROLL_START:
 	case GESTURE_EVENT_SWIPE_START:
@@ -866,9 +822,13 @@ tp_gesture_handle_event_on_state_swipe_start(struct tp_dispatch *tp,
 		break;
 	case GESTURE_EVENT_FINGER_SWITCH_TIMEOUT:
 		break;
-	case GESTURE_EVENT_HOLD_AND_MOTION_START:
-	case GESTURE_EVENT_FINGER_DETECTED:
 	case GESTURE_EVENT_HOLD_TIMEOUT:
+		tp->gesture.hold_state = HOLD_STATE_HOLD;
+		gesture_notify_hold_begin(&tp->device->base,
+					  time,
+					  tp->gesture.finger_count);
+		break;
+	case GESTURE_EVENT_FINGER_DETECTED:
 	case GESTURE_EVENT_POINTER_MOTION_START:
 	case GESTURE_EVENT_SCROLL_START:
 	case GESTURE_EVENT_SWIPE_START:
@@ -898,16 +858,23 @@ tp_gesture_handle_event_on_state_swipe(struct tp_dispatch *tp,
 		tp->gesture.state = GESTURE_STATE_NONE;
 		break;
 	}
+	case GESTURE_EVENT_PINCH_START:
+		tp_gesture_cancel(tp, time);
+		tp->gesture.state = GESTURE_STATE_PINCH_START;
+		break;
 	case GESTURE_EVENT_FINGER_SWITCH_TIMEOUT:
 		tp_gesture_cancel(tp, time);
 		break;
-	case GESTURE_EVENT_HOLD_AND_MOTION_START:
-	case GESTURE_EVENT_FINGER_DETECTED:
 	case GESTURE_EVENT_HOLD_TIMEOUT:
+		tp->gesture.hold_state = HOLD_STATE_HOLD;
+		gesture_notify_hold_begin(&tp->device->base,
+					  time,
+					  tp->gesture.finger_count);
+		break;
+	case GESTURE_EVENT_FINGER_DETECTED:
 	case GESTURE_EVENT_POINTER_MOTION_START:
 	case GESTURE_EVENT_SCROLL_START:
 	case GESTURE_EVENT_SWIPE_START:
-	case GESTURE_EVENT_PINCH_START:
 		log_gesture_bug(tp, event);
 		break;
 	}
@@ -928,12 +895,6 @@ tp_gesture_handle_event(struct tp_dispatch *tp,
 		break;
 	case GESTURE_STATE_UNKNOWN:
 		tp_gesture_handle_event_on_state_unknown(tp, event, time);
-		break;
-	case GESTURE_STATE_HOLD:
-		tp_gesture_handle_event_on_state_hold(tp, event, time);
-		break;
-	case GESTURE_STATE_HOLD_AND_MOTION:
-		tp_gesture_handle_event_on_state_hold_and_motion(tp, event, time);
 		break;
 	case GESTURE_STATE_POINTER_MOTION:
 		tp_gesture_handle_event_on_state_pointer_motion(tp, event, time);
@@ -989,262 +950,79 @@ tp_gesture_tap_timeout(struct tp_dispatch *tp, uint64_t time)
 		tp_gesture_handle_event(tp, GESTURE_EVENT_HOLD_TIMEOUT, time);
 }
 
+static bool
+tp_gesture_is_pinch(struct tp_dispatch *tp)
+{
+	struct device_float_coords vectors[4] = {0};
+
+	for (size_t i = 0; i < tp->gesture.finger_count; i++) {
+		struct tp_touch *t = tp->gesture.touches[i];
+		struct phys_coords delta_mm;
+		delta_mm = tp_phys_delta(tp, device_delta(t->point,
+							  t->gesture.initial));
+		double moved_mm = hypot(delta_mm.x, delta_mm.y);
+
+		vectors[i].x = delta_mm.x / moved_mm;
+		vectors[i].y = delta_mm.y / moved_mm;
+
+		for (size_t j = 0; j < i; j++) {
+			double dot = vectors[i].x * vectors[j].x +
+				     vectors[i].y * vectors[j].y;
+			if (dot < -0.5) {
+				tp->gesture.pinch.touches[0] =
+					tp->gesture.touches[i];
+				tp->gesture.pinch.touches[1] =
+					tp->gesture.touches[j];
+
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 static void
 tp_gesture_detect_motion_gestures(struct tp_dispatch *tp, uint64_t time)
 {
-	struct tp_touch *first = tp->gesture.touches[0],
-			*second = tp->gesture.touches[1],
-			*thumb;
-	uint32_t dir1, dir2;
-	struct device_coords delta;
-	struct phys_coords first_moved, second_moved, distance_mm;
-	double first_mm, second_mm; /* movement since gesture start in mm */
-	double thumb_mm, finger_mm;
-	double min_move = 1.5; /* min movement threshold in mm - count this touch */
-	double max_move = 4.0; /* max movement threshold in mm - ignore other touch */
-	bool is_hold_and_motion;
-
-	first_moved = tp_gesture_mm_moved(tp, first);
-	first_mm = hypot(first_moved.x, first_moved.y);
-
 	if (tp->gesture.finger_count == 1) {
-		if (!tp_has_pending_pointer_motion(tp, time))
-			return;
-
-		is_hold_and_motion = (first_mm < HOLD_AND_MOTION_THRESHOLD);
-
-		if (tp->gesture.state == GESTURE_STATE_HOLD &&
-		    is_hold_and_motion) {
-			tp_gesture_handle_event(tp,
-						GESTURE_EVENT_HOLD_AND_MOTION_START,
-						time);
-			return;
-		}
-
-		if (tp->gesture.state == GESTURE_STATE_HOLD_AND_MOTION &&
-		    is_hold_and_motion)
-			return;
-
 		tp_gesture_handle_event(tp,
 					GESTURE_EVENT_POINTER_MOTION_START,
 					time);
 		return;
 	}
 
-	/* If we have more fingers than slots, we don't know where the
-	 * fingers are. Default to swipe */
-	if (tp->gesture.enabled && tp->gesture.finger_count > 2 &&
-	    tp->gesture.finger_count > tp->num_slots) {
-		tp_gesture_handle_event(tp, GESTURE_EVENT_SWIPE_START, time);
+	if (tp_gesture_is_pinch(tp)) {
+		tp_gesture_handle_event(tp,
+					GESTURE_EVENT_PINCH_START,
+					time);
 		return;
 	}
 
-	/* Need more margin for error when there are more fingers */
-	max_move += 2.0 * (tp->gesture.finger_count - 2);
-	min_move += 0.5 * (tp->gesture.finger_count - 2);
-
-	second_moved = tp_gesture_mm_moved(tp, second);
-	second_mm = hypot(second_moved.x, second_moved.y);
-
-	delta.x = abs(first->point.x - second->point.x);
-	delta.y = abs(first->point.y - second->point.y);
-	distance_mm = evdev_device_unit_delta_to_mm(tp->device, &delta);
-
-	/* If both touches moved less than a mm, we cannot decide yet */
-	if (first_mm < 1 && second_mm < 1)
-		return;
-
-	/* Pick the thumb as the lowest point on the touchpad */
-	if (first->point.y > second->point.y) {
-		thumb = first;
-		thumb_mm = first_mm;
-		finger_mm = second_mm;
-	} else {
-		thumb = second;
-		thumb_mm = second_mm;
-		finger_mm = first_mm;
-	}
-
-	/* If both touches are within 7mm vertically and 40mm horizontally
-	 * past the timeout, assume scroll/swipe */
-	if ((!tp->gesture.enabled ||
-	     (distance_mm.x < 40.0 && distance_mm.y < 7.0)) &&
-	    time > (tp->gesture.initial_time + DEFAULT_GESTURE_SWIPE_TIMEOUT)) {
-		if (tp->gesture.finger_count == 2)
-			tp_gesture_handle_event(tp, GESTURE_EVENT_SCROLL_START, time);
-		else
-			tp_gesture_handle_event(tp, GESTURE_EVENT_SWIPE_START, time);
-
+	if (tp->gesture.finger_count == 2) {
+		tp_gesture_handle_event(tp, GESTURE_EVENT_SCROLL_START, time);
 		return;
 	}
 
-	/* If one touch exceeds the max_move threshold while the other has not
-	 * yet passed the min_move threshold, there is either a resting thumb,
-	 * or the user is doing "one-finger-scroll," where one touch stays in
-	 * place while the other moves.
-	 */
-	if (first_mm >= max_move || second_mm >= max_move) {
-		/* If thumb detection is enabled, and thumb is still while
-		 * finger moves, cancel gestures and mark lower as thumb.
-		 * This applies to all gestures (2, 3, 4+ fingers), but allows
-		 * more thumb motion on >2 finger gestures during detection.
-		 */
-		if (tp->thumb.detect_thumbs && thumb_mm < min_move) {
-			tp_thumb_suppress(tp, thumb);
-			tp_gesture_cancel(tp, time);
-			return;
-		}
-
-		/* If gestures detection is disabled, or if finger is still
-		 * while thumb moves, assume this is "one-finger scrolling."
-		 * This applies only to 2-finger gestures.
-		 */
-		if ((!tp->gesture.enabled || finger_mm < min_move) &&
-		    tp->gesture.finger_count == 2) {
-			tp_gesture_handle_event(tp, GESTURE_EVENT_SCROLL_START, time);
-			return;
-		}
-
-		/* If more than 2 fingers are involved, and the thumb moves
-		 * while the fingers stay still, assume a pinch if eligible.
-		 */
-		if (finger_mm < min_move &&
-		    tp->gesture.finger_count > 2 &&
-		    tp->gesture.enabled &&
-		    tp->thumb.pinch_eligible) {
-			tp_gesture_handle_event(tp, GESTURE_EVENT_PINCH_START, time);
-			return;
-		}
-	}
-
-	/* If either touch is still below the min_move threshold, we can't
-	 * tell what kind of gesture this is.
-	 */
-	if ((first_mm < min_move) || (second_mm < min_move))
-		return;
-
-	/* Both touches have exceeded the min_move threshold, so we have a
-	 * valid gesture. Update gesture initial time and get directions so
-	 * we know if it's a pinch or swipe/scroll.
-	 */
-	dir1 = tp_gesture_get_direction(tp, first);
-	dir2 = tp_gesture_get_direction(tp, second);
-
-	/* If we can't accurately detect pinches, or if the touches are moving
-	 * the same way, this is a scroll or swipe.
-	 */
-	if (tp->gesture.finger_count > tp->num_slots ||
-	    tp_gesture_same_directions(dir1, dir2)) {
-		if (tp->gesture.finger_count == 2) {
-			tp_gesture_handle_event(tp, GESTURE_EVENT_SCROLL_START, time);
-			return;
-		}
-
-		if (tp->gesture.enabled) {
-			tp_gesture_handle_event(tp, GESTURE_EVENT_SWIPE_START, time);
-			return;
-		}
-	}
-
-	/* If the touches are moving away from each other, this is a pinch */
-	tp_gesture_handle_event(tp, GESTURE_EVENT_PINCH_START, time);
-}
-
-static bool
-tp_gesture_is_pinch(struct tp_dispatch *tp)
-{
-	struct tp_touch *first = tp->gesture.touches[0],
-			*second = tp->gesture.touches[1];
-	uint32_t dir1, dir2;
-	struct phys_coords first_moved, second_moved;
-	double first_mm, second_mm;
-
-	dir1 = tp_gesture_get_direction(tp, first);
-	dir2 = tp_gesture_get_direction(tp, second);
-	if (tp_gesture_same_directions(dir1, dir2))
-		return false;
-
-	first_moved = tp_gesture_mm_moved(tp, first);
-	first_mm = hypot(first_moved.x, first_moved.y);
-	if (first_mm < PINCH_DISAMBIGUATION_MOVE_THRESHOLD)
-		return false;
-
-	second_moved = tp_gesture_mm_moved(tp, second);
-	second_mm = hypot(second_moved.x, second_moved.y);
-	if (second_mm < PINCH_DISAMBIGUATION_MOVE_THRESHOLD)
-		return false;
-
-	return true;
+	tp_gesture_handle_event(tp, GESTURE_EVENT_SWIPE_START, time);
 }
 
 static void
 tp_gesture_handle_state_none(struct tp_dispatch *tp, uint64_t time)
 {
-	struct tp_touch *first, *second;
-	struct tp_touch *touches[4];
-	unsigned int ntouches;
-	unsigned int i;
+	unsigned int ntouches =
+		tp_gesture_get_active_touches(tp, tp->gesture.touches, 4);
 
-	ntouches = tp_gesture_get_active_touches(tp, touches, 4);
-
-	first = touches[0];
-	second = touches[1];
+	tp->gesture.initial_time = time;
+	tp->gesture.finger_count = ntouches;
 
 	if (ntouches == 0)
 		return;
 
-	if (ntouches == 1) {
-		first->gesture.initial = first->point;
-		tp->gesture.touches[0] = first;
-
-		tp_gesture_handle_event(tp,
-					GESTURE_EVENT_FINGER_DETECTED,
-					time);
-		return;
+	for (size_t i = 0; i < ntouches; i++) {
+		struct tp_touch *t = tp->gesture.touches[i];
+		t->gesture.initial = t->point;
 	}
-
-	if (!tp->gesture.enabled && !tp->tap.enabled && ntouches == 2) {
-		tp_gesture_handle_event(tp, GESTURE_EVENT_SCROLL_START, time);
-		return;
-	}
-
-	/* For 3+ finger gestures, we only really need to track two touches.
-	 * The human hand's finger arrangement means that for a pinch, the
-	 * bottom-most touch will always be the thumb, and the top-most touch
-	 * will always be one of the fingers.
-	 *
-	 * For 3+ finger swipes, the fingers will likely (but not necessarily)
-	 * be in a horizontal line. They all move together, regardless, so it
-	 * doesn't really matter which two of those touches we track.
-	 *
-	 * Tracking top and bottom is a change from previous versions, where
-	 * we tracked leftmost and rightmost. This change enables:
-	 *
-	 * - More accurate pinch detection if thumb is near the center
-	 * - Better resting-thumb detection while two-finger scrolling
-	 * - On capable hardware, allow 3- or 4-finger swipes with resting
-	 *   thumb or held-down clickpad
-	 */
-	if (ntouches > 2) {
-		second = touches[0];
-
-		for (i = 1; i < ntouches && i < tp->num_slots; i++) {
-			if (touches[i]->point.y < first->point.y)
-				first = touches[i];
-			else if (touches[i]->point.y >= second->point.y)
-				second = touches[i];
-		}
-
-		if (first == second)
-			return;
-
-	}
-
-	tp->gesture.initial_time = time;
-	first->gesture.initial = first->point;
-	second->gesture.initial = second->point;
-	tp->gesture.touches[0] = first;
-	tp->gesture.touches[1] = second;
 
 	tp_gesture_handle_event(tp, GESTURE_EVENT_FINGER_DETECTED, time);
 }
@@ -1253,61 +1031,33 @@ static void
 tp_gesture_handle_state_unknown(struct tp_dispatch *tp, uint64_t time,
 				bool ignore_motion)
 {
+	if (!tp_has_pending_pointer_motion(tp, time))
+		return;
+
 	if (!ignore_motion)
 		tp_gesture_detect_motion_gestures(tp, time);
-}
 
-static void
-tp_gesture_handle_state_hold(struct tp_dispatch *tp, uint64_t time,
-			     bool ignore_motion)
-{
-	if (!ignore_motion)
-		tp_gesture_detect_motion_gestures(tp, time);
-}
-
-static void
-tp_gesture_handle_state_hold_and_pointer_motion(struct tp_dispatch *tp, uint64_t time)
-{
-	if (tp->queued & TOUCHPAD_EVENT_MOTION)
-		tp_gesture_post_pointer_motion(tp, time);
-
-	tp_gesture_detect_motion_gestures(tp, time);
+	tp_gesture_handle_hold_state(tp, time);
 }
 
 static void
 tp_gesture_handle_state_pointer_motion(struct tp_dispatch *tp, uint64_t time)
 {
-	if (tp->queued & TOUCHPAD_EVENT_MOTION)
-		tp_gesture_post_pointer_motion(tp, time);
+	if (!tp_has_pending_pointer_motion(tp, time))
+		return;
+
+	tp_gesture_post_pointer_motion(tp, time);
+	tp_gesture_handle_hold_state(tp, time);
 }
 
 static void
 tp_gesture_handle_state_scroll_start(struct tp_dispatch *tp, uint64_t time)
 {
-	struct device_float_coords raw;
-	struct normalized_coords delta;
-
 	if (tp->scroll.method != LIBINPUT_CONFIG_SCROLL_2FG)
 		return;
 
-	/* We may confuse a pinch for a scroll initially,
-	 * allow ourselves to correct our guess.
-	 */
-	if (time < (tp->gesture.initial_time + DEFAULT_GESTURE_PINCH_TIMEOUT) &&
-	    tp_gesture_is_pinch(tp)) {
-		tp_gesture_handle_event(tp, GESTURE_EVENT_PINCH_START, time);
-		return;
-	}
-
-	raw = tp_get_average_touches_delta(tp);
-
-	/* scroll is not accelerated by default */
-	delta = tp_filter_scroll(tp, &raw, time);
-
-	if (normalized_is_zero(delta))
-		return;
-
 	tp_gesture_init_scroll(tp);
+
 	tp->gesture.state = GESTURE_STATE_SCROLL;
 }
 
@@ -1317,7 +1067,9 @@ tp_gesture_handle_state_scroll(struct tp_dispatch *tp, uint64_t time)
 	struct device_float_coords raw;
 	struct normalized_coords delta;
 
-	if (tp->scroll.method != LIBINPUT_CONFIG_SCROLL_2FG)
+	tp_gesture_handle_hold_state(tp, time);
+
+	if (!tp_has_pending_pointer_motion(tp, time))
 		return;
 
 	/* We may confuse a pinch for a scroll initially,
@@ -1347,20 +1099,16 @@ tp_gesture_handle_state_scroll(struct tp_dispatch *tp, uint64_t time)
 static void
 tp_gesture_handle_state_swipe_start(struct tp_dispatch *tp, uint64_t time)
 {
-	struct device_float_coords raw;
-	struct normalized_coords delta;
+	const struct normalized_coords zero = { 0.0, 0.0 };
+	struct device_float_coords raw = tp_get_average_touches_delta(tp);
+	tp_filter_motion(tp, &raw, time);
 
-	raw = tp_get_average_touches_delta(tp);
-	delta = tp_filter_motion(tp, &raw, time);
+	gesture_notify_swipe(&tp->device->base, time,
+			     LIBINPUT_EVENT_GESTURE_SWIPE_BEGIN,
+			     tp->gesture.finger_count,
+			     &zero, &zero);
 
-	if (!normalized_is_zero(delta) || !device_float_is_zero(raw)) {
-		const struct normalized_coords zero = { 0.0, 0.0 };
-		gesture_notify_swipe(&tp->device->base, time,
-				     LIBINPUT_EVENT_GESTURE_SWIPE_BEGIN,
-				     tp->gesture.finger_count,
-				     &zero, &zero);
-		tp->gesture.state = GESTURE_STATE_SWIPE;
-	}
+	tp->gesture.state = GESTURE_STATE_SWIPE;
 }
 
 static void
@@ -1368,6 +1116,20 @@ tp_gesture_handle_state_swipe(struct tp_dispatch *tp, uint64_t time)
 {
 	struct device_float_coords raw;
 	struct normalized_coords delta, unaccel;
+
+	tp_gesture_handle_hold_state(tp, time);
+
+	if (!tp_has_pending_pointer_motion(tp, time))
+		return;
+
+	/* We may confuse a pinch for a swipe initially,
+	 * allow ourselves to correct our guess.
+	 */
+	if (time < (tp->gesture.initial_time + DEFAULT_GESTURE_PINCH_TIMEOUT) &&
+	    tp_gesture_is_pinch(tp)) {
+		tp_gesture_handle_event(tp, GESTURE_EVENT_PINCH_START, time);
+		return;
+	}
 
 	raw = tp_get_average_touches_delta(tp);
 	delta = tp_filter_motion(tp, &raw, time);
@@ -1385,36 +1147,13 @@ static void
 tp_gesture_handle_state_pinch_start(struct tp_dispatch *tp, uint64_t time)
 {
 	const struct normalized_coords zero = { 0.0, 0.0 };
-	double angle, angle_delta, distance, scale;
-	struct device_float_coords center, fdelta;
-	struct normalized_coords delta;
 
-	tp_gesture_get_pinch_info(tp, &distance, &angle, &center);
-
-	scale = distance / tp->gesture.initial_distance;
-
-	angle_delta = angle - tp->gesture.angle;
-	tp->gesture.angle = angle;
-	if (angle_delta > 180.0)
-		angle_delta -= 360.0;
-	else if (angle_delta < -180.0)
-		angle_delta += 360.0;
-
-	fdelta = device_float_delta(center, tp->gesture.center);
-	tp->gesture.center = center;
-
-	delta = tp_filter_motion(tp, &fdelta, time);
-
-	if (normalized_is_zero(delta) && device_float_is_zero(fdelta) &&
-	    scale == tp->gesture.prev_scale && angle_delta == 0.0)
-		return;
-
+	tp_gesture_init_pinch(tp);
         gesture_notify_pinch(&tp->device->base, time,
                              LIBINPUT_EVENT_GESTURE_PINCH_BEGIN,
                              tp->gesture.finger_count,
                              &zero, &zero, 1.0, 0.0);
 
-	tp->gesture.prev_scale = scale;
 	tp->gesture.state = GESTURE_STATE_PINCH;
 }
 
@@ -1425,24 +1164,29 @@ tp_gesture_handle_state_pinch(struct tp_dispatch *tp, uint64_t time)
 	struct device_float_coords center, fdelta;
 	struct normalized_coords delta, unaccel;
 
+	tp_gesture_handle_hold_state(tp, time);
+
+	if (!tp_has_pending_pointer_motion(tp, time))
+		return;
+
 	tp_gesture_get_pinch_info(tp, &distance, &angle, &center);
 
-	scale = distance / tp->gesture.initial_distance;
+	scale = distance / tp->gesture.pinch.initial_distance;
 
-	angle_delta = angle - tp->gesture.angle;
-	tp->gesture.angle = angle;
+	angle_delta = angle - tp->gesture.pinch.angle;
+	tp->gesture.pinch.angle = angle;
 	if (angle_delta > 180.0)
 		angle_delta -= 360.0;
 	else if (angle_delta < -180.0)
 		angle_delta += 360.0;
 
-	fdelta = device_float_delta(center, tp->gesture.center);
-	tp->gesture.center = center;
+	fdelta = device_float_delta(center, tp->gesture.pinch.center);
+	tp->gesture.pinch.center = center;
 
 	delta = tp_filter_motion(tp, &fdelta, time);
 
 	if (normalized_is_zero(delta) && device_float_is_zero(fdelta) &&
-	    scale == tp->gesture.prev_scale && angle_delta == 0.0)
+	    scale == tp->gesture.pinch.prev_scale && angle_delta == 0.0)
 		return;
 
 	unaccel = tp_filter_motion_unaccelerated(tp, &fdelta, time);
@@ -1451,7 +1195,7 @@ tp_gesture_handle_state_pinch(struct tp_dispatch *tp, uint64_t time)
 			     tp->gesture.finger_count,
 			     &delta, &unaccel, scale, angle_delta);
 
-	tp->gesture.prev_scale = scale;
+	tp->gesture.pinch.prev_scale = scale;
 }
 
 static void
@@ -1479,16 +1223,8 @@ tp_gesture_handle_state(struct tp_dispatch *tp, uint64_t time,
 		tp_gesture_handle_state_unknown(tp, time, ignore_motion);
 		REMEMBER_TRANSITION(transition_state, tp->gesture.state);
 	}
-	if (tp->gesture.state == GESTURE_STATE_HOLD) {
-		tp_gesture_handle_state_hold(tp, time, ignore_motion);
-		REMEMBER_TRANSITION(transition_state, tp->gesture.state);
-	}
 	if (tp->gesture.state == GESTURE_STATE_POINTER_MOTION) {
 		tp_gesture_handle_state_pointer_motion(tp, time);
-		REMEMBER_TRANSITION(transition_state, tp->gesture.state);
-	}
-	if (tp->gesture.state == GESTURE_STATE_HOLD_AND_MOTION) {
-		tp_gesture_handle_state_hold_and_pointer_motion(tp, time);
 		REMEMBER_TRANSITION(transition_state, tp->gesture.state);
 	}
 	if (tp->gesture.state == GESTURE_STATE_SCROLL) {
@@ -1608,6 +1344,8 @@ tp_gesture_stop_twofinger_scroll(struct tp_dispatch *tp, uint64_t time)
 static void
 tp_gesture_end(struct tp_dispatch *tp, uint64_t time, enum gesture_cancelled cancelled)
 {
+	tp_gesture_hold_end(tp, time, cancelled);
+
 	switch (tp->gesture.state) {
 	case GESTURE_STATE_NONE:
 	case GESTURE_STATE_UNKNOWN:
@@ -1616,8 +1354,6 @@ tp_gesture_end(struct tp_dispatch *tp, uint64_t time, enum gesture_cancelled can
 	case GESTURE_STATE_SWIPE_START:
 		tp_gesture_handle_event(tp, GESTURE_EVENT_RESET, time);
 		break;
-	case GESTURE_STATE_HOLD:
-	case GESTURE_STATE_HOLD_AND_MOTION:
 	case GESTURE_STATE_POINTER_MOTION:
 	case GESTURE_STATE_SCROLL:
 	case GESTURE_STATE_PINCH:
@@ -1650,9 +1386,6 @@ tp_gesture_cancel_motion_gestures(struct tp_dispatch *tp, uint64_t time)
 	case GESTURE_STATE_PINCH_START:
 	case GESTURE_STATE_SWIPE_START:
 		break;
-	case GESTURE_STATE_HOLD:
-		break;
-	case GESTURE_STATE_HOLD_AND_MOTION:
 	case GESTURE_STATE_POINTER_MOTION:
 	case GESTURE_STATE_SCROLL:
 	case GESTURE_STATE_PINCH:
@@ -1692,8 +1425,6 @@ tp_gesture_has_started(struct tp_dispatch *tp)
 	case GESTURE_STATE_SWIPE_START:
 	case GESTURE_STATE_POINTER_MOTION:
 		return false;
-	case GESTURE_STATE_HOLD:
-	case GESTURE_STATE_HOLD_AND_MOTION:
 	case GESTURE_STATE_SCROLL:
 	case GESTURE_STATE_PINCH:
 	case GESTURE_STATE_SWIPE:
@@ -1722,6 +1453,8 @@ tp_gesture_update_finger_state(struct tp_dispatch *tp, uint64_t time)
 			tp->gesture.finger_count_pending = 0;
 		/* Immediately switch to new mode to avoid initial latency */
 		} else if (!tp_gesture_has_started(tp)) {
+			tp_gesture_hold_end(tp, time, true);
+
 			tp->gesture.finger_count = active_touches;
 			tp->gesture.finger_count_pending = 0;
 			/* If in UNKNOWN or POINTER_MOTION state, go back to
@@ -1803,6 +1536,7 @@ tp_init_gesture(struct tp_dispatch *tp)
 
 	tp->gesture.state = GESTURE_STATE_NONE;
 	tp->gesture.hold_enabled = tp_gesture_are_gestures_enabled(tp);
+	tp->gesture.hold_state = HOLD_STATE_NONE;
 
 	snprintf(timer_name,
 		 sizeof(timer_name),

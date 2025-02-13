@@ -157,8 +157,6 @@ enum tp_edge_scroll_touch_state {
 enum tp_gesture_state {
 	GESTURE_STATE_NONE,
 	GESTURE_STATE_UNKNOWN,
-	GESTURE_STATE_HOLD,
-	GESTURE_STATE_HOLD_AND_MOTION,
 	GESTURE_STATE_POINTER_MOTION,
 	GESTURE_STATE_SCROLL_START,
 	GESTURE_STATE_SCROLL,
@@ -166,6 +164,11 @@ enum tp_gesture_state {
 	GESTURE_STATE_PINCH,
 	GESTURE_STATE_SWIPE_START,
 	GESTURE_STATE_SWIPE,
+};
+
+enum tp_hold_state {
+	HOLD_STATE_NONE,
+	HOLD_STATE_HOLD,
 };
 
 enum tp_thumb_state {
@@ -357,14 +360,18 @@ struct tp_dispatch {
 		unsigned int finger_count_pending;
 		struct libinput_timer finger_count_switch_timer;
 		enum tp_gesture_state state;
-		struct tp_touch *touches[2];
+		struct tp_touch *touches[4];
 		uint64_t initial_time;
-		double initial_distance;
-		double prev_scale;
-		double angle;
-		struct device_float_coords center;
+		struct {
+			struct tp_touch *touches[2];
+			double initial_distance;
+			double prev_scale;
+			double angle;
+			struct device_float_coords center;
+		} pinch;
 		struct libinput_timer hold_timer;
 		bool hold_enabled;
+		enum tp_hold_state hold_state;
 	} gesture;
 
 	struct {
