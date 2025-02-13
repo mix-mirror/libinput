@@ -356,4 +356,7 @@ LIBINPUT_1.27 {
 	libinput_device_config_area_set_rectangle;
 	libinput_device_config_area_get_rectangle;
 	libinput_device_config_area_get_default_rectangle;
+	libinput_device_config_tap_set_hold_tap_enabled;
+	libinput_device_config_tap_get_hold_tap_enabled;
+	libinput_device_config_tap_get_default_hold_tap_enabled;
 } LIBINPUT_1.26;

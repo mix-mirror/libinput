@@ -72,6 +72,9 @@ Enable or disable disable-while-typing
 .B \-\-enable\-dwtp|\-\-disable\-dwtp
 Enable or disable disable-while-trackpointing
 .TP 8
+.B \-\-enable\-hold-tap|\-\-disable\-hold\-tap
+Enable or disable hold-and-tap
+.TP 8
 .B \-\-enable\-left\-handed|\-\-disable\-left\-handed
 Enable or disable left handed button configuration
 .TP 8

@@ -82,6 +82,9 @@ __all_seats()
 		+ '(dwtp)' \
 		'--enable-dwtp[Enable disable-while-trackpointing]' \
 		'--disable-dwtp[Disable disable-while-trackpointing]' \
+		+ '(hold-and-tap)' \
+		'--enable-hold-tap[Enable hold-and-tap]' \
+		'--disable-hold-tap[Disable hold-and-tap]' \
 		+ '(left-handed)' \
 		'--enable-left-handed[Enable left handed button configuration]' \
 		'--disable-left-handed[Disable left handed button configuration]' \

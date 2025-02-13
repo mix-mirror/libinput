@@ -1170,11 +1170,13 @@ tp_clickfinger_set_button(struct tp_dispatch *tp)
 	struct tp_touch *t;
 	struct tp_touch *first = NULL,
 			*second = NULL;
+	bool only_taps = tp->tap.hold_tap_enabled;
 	int32_t button_map[2][3] = {
 		{ BTN_LEFT, BTN_RIGHT, BTN_MIDDLE },
 		{ BTN_LEFT, BTN_MIDDLE, BTN_RIGHT },
 	};
 
+again:
 	tp_for_each_touch(tp, t) {
 		if (t->state != TOUCH_BEGIN && t->state != TOUCH_UPDATE)
 			continue;
@@ -1185,12 +1187,20 @@ tp_clickfinger_set_button(struct tp_dispatch *tp)
 		if (t->palm.state != PALM_NONE)
 			continue;
 
+		if (only_taps && t->tap.state != TAP_TOUCH_STATE_TOUCH)
+			continue;
+
 		nfingers++;
 
 		if (!first)
 			first = t;
 		else if (!second)
 			second = t;
+	}
+
+	if (only_taps && nfingers == 0) {
+		only_taps = false;
+		goto again;
 	}
 
 	/* Only check for finger distance when there are 2 fingers on the
