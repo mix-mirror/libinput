@@ -142,9 +142,14 @@ ModelTabletModeSwitchUnreliable
     Indicates that this tablet mode switch's state cannot be relied upon.
 ModelTrackball
     Reserved for trackballs
+
+.. _device-quirks-ModelBouncingKeys:
+
 ModelBouncingKeys
     Indicates that the device may send fake bouncing key events and
     timestamps can not be relied upon.
+    See also :ref:`device-quirks-AttrBouncingTimeoutMs` and
+    :ref:`device-quirks-AttrBouncingTimeoutSpuriousMs`.
 ModelSynapticsSerialTouchpad
     Reserved for touchpads made by Synaptics on the serial bus
 ModelPressurePad
@@ -201,6 +206,20 @@ AttrPointingStickIntegration=internal|external
 AttrTabletSmoothing=1|0
     Enables (1) or disables (0) input smoothing for tablet devices. Smoothing is enabled
     by default, except on AES devices.
+
+.. _device-quirks-AttrBouncingTimeoutMs:
+
+AttrBouncingTimeoutMs
+    Timeout (in milliseconds) for the "bounce" debouncing method.
+    See :ref:`button_debouncing` for details.
+    Only applies when :ref:`device-quirks-ModelBouncingKeys` is enabled.
+
+.. _device-quirks-AttrBouncingTimeoutSpuriousMs:
+
+AttrBouncingTimeoutSpuriousMs
+    Timeout (in milliseconds) for the "spurious" debouncing method.
+    See :ref:`button_debouncing` for details.
+    Only applies when :ref:`device-quirks-ModelBouncingKeys` is enabled.
 
 .. _device-quirks-matches:
 
