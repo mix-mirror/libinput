@@ -83,15 +83,17 @@ fallback_interface_get_switch_state(struct evdev_dispatch *evdev_dispatch,
 
 	switch (sw) {
 	case LIBINPUT_SWITCH_TABLET_MODE:
-		break;
+		return dispatch->tablet_mode.sw.state ?
+			LIBINPUT_SWITCH_STATE_ON :
+			LIBINPUT_SWITCH_STATE_OFF;
+	case LIBINPUT_SWITCH_KEYPAD_SLIDE:
+		return dispatch->keypad_slide.sw.state ?
+			LIBINPUT_SWITCH_STATE_ON :
+			LIBINPUT_SWITCH_STATE_OFF;
 	default:
 		/* Internal function only, so we can abort here */
 		abort();
 	}
-
-	return dispatch->tablet_mode.sw.state ?
-			LIBINPUT_SWITCH_STATE_ON :
-			LIBINPUT_SWITCH_STATE_OFF;
 }
 
 static inline bool
@@ -741,6 +743,19 @@ fallback_process_switch(struct fallback_dispatch *dispatch,
 				     LIBINPUT_SWITCH_TABLET_MODE,
 				     state);
 		break;
+	case EVDEV_SW_KEYPAD_SLIDE:
+		if (dispatch->keypad_slide.sw.state == e->value)
+			return;
+
+		dispatch->keypad_slide.sw.state = e->value;
+		if (e->value)
+			state = LIBINPUT_SWITCH_STATE_ON;
+		else
+			state = LIBINPUT_SWITCH_STATE_OFF;
+		switch_notify_toggle(&device->base,
+				     time,
+				     LIBINPUT_SWITCH_KEYPAD_SLIDE,
+				     state);
 	default:
 		break;
 	}
@@ -1185,6 +1200,13 @@ fallback_interface_sync_initial_state(struct evdev_device *device,
 		switch_notify_toggle(&device->base,
 				     time,
 				     LIBINPUT_SWITCH_TABLET_MODE,
+				     LIBINPUT_SWITCH_STATE_ON);
+	}
+
+	if (dispatch->keypad_slide.sw.state) {
+		switch_notify_toggle(&device->base,
+				     time,
+				     LIBINPUT_SWITCH_KEYPAD_SLIDE,
 				     LIBINPUT_SWITCH_STATE_ON);
 	}
 }

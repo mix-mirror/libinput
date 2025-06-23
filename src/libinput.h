@@ -722,6 +722,11 @@ enum libinput_switch {
 	 * in tablet mode.
 	 */
 	LIBINPUT_SWITCH_TABLET_MODE,
+
+	/**
+	 * ...
+	 */
+	LIBINPUT_SWITCH_KEYPAD_SLIDE,
 };
 
 /**
