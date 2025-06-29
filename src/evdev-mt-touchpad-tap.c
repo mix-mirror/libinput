@@ -1231,12 +1231,44 @@ tp_tap_handle_state(struct tp_dispatch *tp, uint64_t time)
 		 * ignore any event from it.
 		 */
 		if (t->tap.is_palm) {
-			if (t->state == TOUCH_END)
+			if (t->state == TOUCH_END) {
 				tp_tap_handle_event(tp,
 						    t,
 						    TAP_EVENT_PALM_UP,
 						    time);
-			continue;
+				continue;
+			}
+			if (t->palm.state != PALM_NONE)
+				continue;
+
+			/* Treat a touch previously classified as palm as a new
+			 * touch when it ceases to be a palm. Several palm
+			 * detection mechanisms such as PALM_EDGE or
+			 * PALM_TOOL_PALM can release palms like this. */
+			tp_tap_handle_event(tp,
+					    t,
+					    TAP_EVENT_PALM_UP,
+					    time);
+			t->tap.is_palm = false;
+			tp->tap.nfingers_down++;
+			tp_tap_handle_event(tp,
+					    t,
+					    TAP_EVENT_TOUCH,
+					    time);
+			/* Since we're evidently not quite sure about the palm
+			 * state of this touch, disqualify it from tapping to be
+			 * safe. The initial coordinates and timestamp are also
+			 * lost at this point, so motion and timeout checks
+			 * couldn't be accurate anyway. */
+			struct tp_touch *tmp;
+			tp_for_each_touch(tp, tmp) {
+				if (tmp->tap.state == TAP_TOUCH_STATE_TOUCH)
+					tmp->tap.state = TAP_TOUCH_STATE_DEAD;
+			}
+			tp_tap_handle_event(tp,
+					    t,
+					    TAP_EVENT_MOTION,
+					    time);
 		}
 
 		if (t->state == TOUCH_HOVERING)
