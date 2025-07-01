@@ -145,10 +145,14 @@ tp_tap_notify(struct tp_dispatch *tp,
 	else
 		tp->tap.buttons_pressed &= ~bit(nfingers);
 
+
 	evdev_pointer_notify_button(tp->device,
 				    time,
 				    evdev_usage_from_uint32_t(button),
 				    state);
+
+	if (state != LIBINPUT_BUTTON_STATE_PRESSED)
+		tp_tfd_handle_tap(tp, time);
 }
 
 static void
