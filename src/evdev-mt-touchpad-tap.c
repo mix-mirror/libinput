@@ -1291,6 +1291,9 @@ tp_tap_handle_state(struct tp_dispatch *tp, uint64_t time)
 		}
 	}
 
+	/* Log 1-finger drag state changes */
+	filter_motion = tp_edge_motion_handle_drag_state(tp, time);
+
 	/**
 	 * In any state where motion exceeding the move threshold would
 	 * move to the next state, filter that motion until we actually
@@ -1596,6 +1599,7 @@ void
 tp_remove_tap(struct tp_dispatch *tp)
 {
 	libinput_timer_cancel(&tp->tap.timer);
+	tp_edge_motion_cleanup();
 }
 
 void
