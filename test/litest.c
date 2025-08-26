@@ -276,7 +276,7 @@ litest_fail_comparison_str(const char *file,
 			   const char *func,
 			   const char *comparison,
 			   const char *operator,
-			   const char * astr,
+			   const char *astr,
 			   const char *bstr)
 {
 	litest_log("FAILED COMPARISON: %s %s %s\n", astr, operator, bstr);
