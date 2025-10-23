@@ -227,6 +227,7 @@ executable('libinput-device-group',
 	   dependencies : [dep_udev, dep_libwacom],
 	   include_directories : [includes_src, includes_include],
 	   install : true,
+	   install_tag : 'runtime',
 	   install_dir : dir_udev_callouts)
 executable('libinput-fuzz-extract',
 	   'udev/libinput-fuzz-extract.c',
@@ -235,12 +236,14 @@ executable('libinput-fuzz-extract',
 	   dependencies : [dep_udev, dep_libevdev, dep_lm],
 	   include_directories : [includes_src, includes_include],
 	   install : true,
+	   install_tag : 'runtime',
 	   install_dir : dir_udev_callouts)
 executable('libinput-fuzz-to-zero',
 	   'udev/libinput-fuzz-to-zero.c',
 	   dependencies : [dep_udev, dep_libevdev],
 	   include_directories : [includes_src, includes_include],
 	   install : true,
+	   install_tag : 'runtime',
 	   install_dir : dir_udev_callouts)
 
 udev_rules_config = configuration_data()
@@ -552,6 +555,7 @@ executable('libinput-debug-events',
 	   dependencies : deps_tools,
 	   include_directories : [includes_src, includes_include],
 	   install_dir : libinput_tool_path,
+	   install_tag : 'bin',
 	   install : true
 	   )
 
@@ -561,6 +565,7 @@ executable('libinput-debug-tablet',
 	   dependencies : deps_tools,
 	   include_directories : [includes_src, includes_include],
 	   install_dir : libinput_tool_path,
+	   install_tag : 'bin',
 	   install : true)
 
 libinput_debug_tablet_pad_sources = [ 'tools/libinput-debug-tablet-pad.c' ]
@@ -569,6 +574,7 @@ executable('libinput-debug-tablet-pad',
 	   dependencies : deps_tools,
 	   include_directories : [includes_src, includes_include],
 	   install_dir : libinput_tool_path,
+	   install_tag : 'bin',
 	   install : true)
 
 libinput_quirks_sources = [ 'tools/libinput-quirks.c' ]
@@ -577,6 +583,7 @@ libinput_quirks = executable('libinput-quirks',
 			     dependencies : [dep_libquirks, dep_tools_shared, dep_libinput],
 			     include_directories : [includes_src, includes_include],
 			     install_dir : libinput_tool_path,
+			     install_tag : 'bin',
 			     install : true
 			    )
 test('validate-quirks',
@@ -598,6 +605,7 @@ libinput_list_devices = executable('libinput-list-devices',
 				   dependencies : deps_tools,
 				   include_directories : [includes_src, includes_include],
 				   install_dir : libinput_tool_path,
+				   install_tag : 'bin',
 				   install : true,
 				  )
 test('list-devices',
@@ -610,6 +618,7 @@ executable('libinput-measure',
 	   dependencies : deps_tools,
 	   include_directories : [includes_src, includes_include],
 	   install_dir : libinput_tool_path,
+	   install_tag : 'bin',
 	   install : true,
 	   )
 
@@ -619,6 +628,7 @@ executable('libinput-analyze',
 	   dependencies : deps_tools,
 	   include_directories : [includes_src, includes_include],
 	   install_dir : libinput_tool_path,
+	   install_tag : 'bin',
 	   install : true,
 	   )
 
@@ -650,6 +660,7 @@ executable('libinput-record',
 	   dependencies : deps_tools + [dep_udev],
 	   include_directories : [includes_src, includes_include],
 	   install_dir : libinput_tool_path,
+	   install_tag : 'bin',
 	   install : true,
 	   )
 
@@ -726,6 +737,7 @@ if get_option('debug-gui')
 		   dependencies : deps_debug_gui,
 		   include_directories : [includes_src, includes_include],
 		   install_dir : libinput_tool_path,
+		   install_tag : 'bin',
 		   install : true
 		   )
 	src_man += files('tools/libinput-debug-gui.man')
@@ -737,6 +749,7 @@ libinput_tool = executable('libinput',
 			   libinput_sources,
 			   dependencies : deps_tools,
 			   include_directories : [includes_src, includes_include],
+			   install_tag : 'bin',
 			   install : true
 			  )
 
@@ -827,6 +840,7 @@ executable('libinput-test',
 	   dependencies : deps_tools,
 	   include_directories : [includes_src, includes_include],
 	   install_dir : libinput_tool_path,
+	   install_tag : 'tests',
 	   install : true,
 	   )
 
