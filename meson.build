@@ -393,11 +393,7 @@ libquirks = static_library('quirks', src_libquirks,
 dep_libquirks = declare_dependency(link_with : libquirks)
 
 # Create /etc/libinput
-if meson.version().version_compare('>= 0.60')
-	install_emptydir(dir_etc / 'libinput')
-else
-	install_subdir('libinput', install_dir : dir_etc)
-endif
+install_emptydir(dir_etc / 'libinput')
 
 ############ libinput.so ############
 if get_option('internal-event-debugging')
@@ -490,9 +486,7 @@ dep_libinput = declare_dependency(
 		link_with : lib_libinput,
 		dependencies : deps_libinput)
 
-if meson.version().version_compare('>= 0.54.0')
-	meson.override_dependency('libinput', dep_libinput)
-endif
+meson.override_dependency('libinput', dep_libinput)
 
 pkgconfig.generate(
 	filebase : 'libinput',
@@ -676,11 +670,7 @@ if get_option('debug-gui')
 		endif
 	endif
 
-	if meson.version().version_compare('>= 0.58')
-		gtk_targets = dep_gtk.get_variable('targets')
-	else
-		gtk_targets = dep_gtk.get_pkgconfig_variable('targets')
-	endif
+	gtk_targets = dep_gtk.get_variable('targets')
 
 	have_gtk_wayland = gtk_targets.contains('wayland')
 	have_gtk_x11 = gtk_targets.contains('x11')
@@ -699,11 +689,7 @@ if get_option('debug-gui')
 
 	if have_gtk_wayland and dep_wayland_client.found() and dep_wayland_protocols.found()
 		wayland_scanner = find_program('wayland-scanner')
-		if meson.version().version_compare('>= 0.58')
-			wlproto_dir = dep_wayland_protocols.get_variable('pkgdatadir')
-		else
-			wlproto_dir = dep_wayland_protocols.get_pkgconfig_variable('pkgdatadir')
-		endif
+		wlproto_dir = dep_wayland_protocols.get_variable('pkgdatadir')
 
 		proto_name = 'pointer-constraints-unstable-v1'
 		input = files(wlproto_dir / 'unstable' / 'pointer-constraints' / '@0@.xml'.format(proto_name))
