@@ -4,9 +4,9 @@
 Switches
 ==============================================================================
 
-libinput supports the lid and tablet-mode switches. Unlike button events
-that come in press and release pairs, switches are usually toggled once and
-left at the setting for an extended period of time.
+libinput supports the lid, tablet-mode, and keypad slide switches. Unlike
+button events that come in press and release pairs, switches are usually
+toggled once and left at the setting for an extended period of time.
 
 Only some switches are handled by libinput, see **libinput_switch** for a
 list of supported switches. Switch events are exposed to the caller, but
@@ -59,3 +59,20 @@ tablet mode is disengaged.
 
 This handling of tablet mode switches is transparent to the user, no
 notifications are sent and the device appears as enabled at all times.
+
+.. _switches_keypad_slide:
+
+------------------------------------------------------------------------------
+Keypad slide switch handling
+------------------------------------------------------------------------------
+
+Where available, libinput listens to devices providing a keypad slide switch.
+This is usually available on devices that have an always-attached physical
+keyboard which can slide under the screen. An example of such a device is the
+Nokia N900.
+
+The event sent by the kernel is ``EV_SW`` ``SW_KEYPAD_SLIDE`` and is provided
+as **LIBINPUT_SWITCH_KEYPAD_SLIDE**. The keypad slide switch does not cause any
+other input devices to be enabled nor disabled in response, since on some
+devices the kernel event is sent while the keyboard is partially visible and
+thus usable.

@@ -131,7 +131,7 @@ Handled device types
 - Mice
 - Keyboards
 - Virtual absolute pointing devices such as those used by QEMU or VirtualBox
-- Switches (Lid Switch and Tablet Mode switch)
+- Switches (Lid Switch, Tablet Mode switch, and Keypad Slide switch)
 - Graphics tablets
 - :ref:`Trackpoints`
 
