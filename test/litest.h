@@ -1765,8 +1765,7 @@ litest_touchpad_is_external(struct litest_device *dev)
 		return true;
 
 	udev_device = libinput_device_get_udev_device(dev->libinput_device);
-	prop = udev_device_get_property_value(udev_device,
-					      "ID_INPUT_TOUCHPAD_INTEGRATION");
+	prop = udev_device_get_property_value(udev_device, "ID_INTEGRATION");
 	is_external = prop && streq(prop, "external");
 	udev_device_unref(udev_device);
 
