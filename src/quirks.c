@@ -24,7 +24,7 @@
 #include "config.h"
 
 /* This has the hallmarks of a library to make it re-usable from the tests
- * and from the list-quirks tool. It doesn't have all of the features from a
+ * and from the quirks list tool. It doesn't have all of the features from a
  * library you'd expect though
  */
 

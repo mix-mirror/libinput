@@ -82,10 +82,10 @@ files will not be used.
 Debugging
 ---------
 
-When modifying a data file, use the `libinput list-quirks` tool to
+When modifying a data file, use the `libinput quirks list` tool to
 verify the changes. The tool can be pointed at the data directory to
 analyse, use `--verbose` to get more info. For example:
 
 ```
-libinput list-quirks --data-dir /path/to/git/repo/quirks/ --verbose /dev/input/event0
+libinput quirks list --data-dir /path/to/git/repo/quirks/ --verbose /dev/input/event0
 ```

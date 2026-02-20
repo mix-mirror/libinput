@@ -124,7 +124,7 @@ and product name (pn).
 Once in place, run the following command to verify the quirk is valid and
 works for your device: ::
 
-     $ sudo libinput list-quirks /dev/input/event10
+     $ sudo libinput quirks list /dev/input/event10
      AttrPressureRange=10:8
 
 Replace the event node with the one from your device. If the
@@ -218,7 +218,7 @@ and product name (pn).
 Once in place, run the following command to verify the quirk is valid and
 works for your device: ::
 
-     $ sudo libinput list-quirks /dev/input/event10
+     $ sudo libinput quirks list /dev/input/event10
      AttrTouchSizeRange=10:8
 
 Replace the event node with the one from your device. If the
