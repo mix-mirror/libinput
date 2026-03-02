@@ -1359,6 +1359,7 @@ _litest_timeout(struct libinput *li, const char *func, int lineno, int millis);
 #define litest_timeout_debounce(li_) litest_timeout(li_, 30)
 #define litest_timeout_softbuttons(li_) litest_timeout(li_, 300)
 #define litest_timeout_buttonscroll(li_) litest_timeout(li_, 300)
+#define litest_timeout_scroll_button_lock_grace(li_) litest_timeout(li_, 600)
 #define litest_timeout_wheel_scroll(li_) litest_timeout(li_, 600)
 #define litest_timeout_edgescroll(li_) litest_timeout(li_, 300)
 #define litest_timeout_finger_switch(li_) litest_timeout(li_, 140)
