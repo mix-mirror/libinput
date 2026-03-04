@@ -1318,7 +1318,7 @@ eraser_button_set_button(struct libinput_tablet_tool *tool, uint32_t button)
 		break;
 	default:
 		log_bug_libinput(libinput_device_get_context(tool->last_device),
-				 "Unsupported eraser button 0x%x",
+				 "Unsupported eraser button 0x%x\n",
 				 button);
 		return LIBINPUT_CONFIG_STATUS_INVALID;
 	}
