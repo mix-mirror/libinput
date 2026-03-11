@@ -8024,6 +8024,8 @@ START_TEST(tablet_eraser_button_different_buttons)
 		_destroy_(libinput_event) *ev = libinput_get_event(li);
 		auto tev =
 			litest_is_tablet_event(ev, LIBINPUT_EVENT_TABLET_TOOL_BUTTON);
+		litest_assert_enum_eq(libinput_event_tablet_tool_get_button_state(tev),
+				      LIBINPUT_BUTTON_STATE_RELEASED);
 		litest_assert_int_eq(libinput_event_tablet_tool_get_button(tev),
 				     eraser_button_mapping);
 		litest_assert_ptr_eq(libinput_event_tablet_tool_get_tool(tev), pen);
