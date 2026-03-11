@@ -45,6 +45,7 @@ __all_seats()
 		'--verbose[Use verbose output]' \
 		'--show-keycodes[Make all keycodes visible]' \
 		'--grab[Exclusively grab all opened devices]' \
+		'--compress-motion-events[Compress repeated motion events on a TTY]' \
 		'--device=[Use the given device with the path backend]:device:_files -W /dev/input/ -P /dev/input/' \
 		'--udev=[Listen for notifications on the given seat]:seat:__all_seats' \
 		'--apply-to=[Apply configuration options where the device name matches the pattern]:pattern' \

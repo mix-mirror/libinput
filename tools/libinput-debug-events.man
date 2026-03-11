@@ -20,6 +20,10 @@ This tool usually needs to be run as root to have access to the
 /dev/input/eventX nodes.
 .SH OPTIONS
 .TP 8
+.B \-\-compress\-motion\-events
+Compress repeated motion, axis, scrool, and gesture update
+events into a single line. This only takes effect if stdout is a TTY.
+.TP 8
 .B \-\-device \fI/dev/input/event0\fR
 Use the given device(s) with the path backend. The \fB\-\-device\fR argument may be
 omitted.
