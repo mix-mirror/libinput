@@ -146,7 +146,6 @@ tools_init_options(struct tools_options *options)
 	options->area.y2 = 1.0;
 	options->sendevents = LIBINPUT_CONFIG_SEND_EVENTS_ENABLED;
 	options->eraser_button_mode = LIBINPUT_CONFIG_ERASER_BUTTON_DEFAULT;
-	options->eraser_button_button = BTN_STYLUS;
 	options->eraser_button_button = 0;
 }
 
