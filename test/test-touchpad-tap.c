@@ -1549,6 +1549,182 @@ START_TEST(touchpad_tap_n_drag_draglock_sticky)
 }
 END_TEST
 
+enum edge { TOP, BOTTOM, LEFT, RIGHT };
+
+START_TEST(touchpad_tap_n_drag_auto_draglock_edge)
+{
+	/* Test: tap-and-drag with drag-lock disabled. When a finger is
+	 * released at a touchpad edge, auto drag-lock activates.
+	 */
+	struct litest_device *dev = litest_current_device();
+	struct libinput *li = dev->libinput;
+	enum edge edge = litest_test_param_get_i32(test_env->params, "edge");
+	int nfingers = litest_test_param_get_i32(test_env->params, "fingers");
+
+	if (nfingers > litest_slot_count(dev))
+		return LITEST_NOT_APPLICABLE;
+
+	litest_enable_tap(dev->libinput_device);
+	litest_disable_drag_lock(dev->libinput_device);
+	litest_disable_hold_gestures(dev->libinput_device);
+	litest_drain_events(li);
+
+	unsigned int button = 0;
+	switch (nfingers) {
+	case 1:
+		button = BTN_LEFT;
+		break;
+	case 2:
+		button = BTN_RIGHT;
+		break;
+	case 3:
+		button = BTN_MIDDLE;
+		break;
+	}
+
+	/* tap and drag */
+	switch (nfingers) {
+	case 3:
+		litest_touch_down(dev, 2, 60, 30);
+		_fallthrough_;
+	case 2:
+		litest_touch_down(dev, 1, 50, 30);
+		_fallthrough_;
+	case 1:
+		litest_touch_down(dev, 0, 40, 30);
+		break;
+	}
+	switch (nfingers) {
+	case 3:
+		litest_touch_up(dev, 2);
+		_fallthrough_;
+	case 2:
+		litest_touch_up(dev, 1);
+		_fallthrough_;
+	case 1:
+		litest_touch_up(dev, 0);
+		break;
+	}
+
+	/* 1fg back down starts the drag */
+	litest_touch_down(dev, 0, 50, 50);
+	litest_timeout_tap(li);
+	litest_assert_button_event(li, button, LIBINPUT_BUTTON_STATE_PRESSED);
+	litest_assert_empty_queue(li);
+
+	int x = 50, y = 50;
+	switch (edge) {
+	case TOP:
+		y = 0;
+		break;
+	case BOTTOM:
+		y = 99;
+		break;
+	case LEFT:
+		x = 0;
+		break;
+	case RIGHT:
+		x = 99;
+		break;
+	}
+	litest_touch_move_to(dev, 0, 50, 50, x, y, 20);
+	litest_drain_events(li);
+	litest_touch_up(dev, 0);
+
+	/* auto drag-lock should be active - button still pressed */
+	litest_assert_empty_queue(li);
+
+	/* put finger down again within timeout */
+	litest_touch_down(dev, 0, 50, 50);
+	litest_touch_move_to(dev, 0, 50, 50, 60, 60, 10);
+	litest_assert_only_typed_events(li, LIBINPUT_EVENT_POINTER_MOTION);
+	litest_drain_events(li);
+
+	/* release normally (not at edge) */
+	litest_touch_up(dev, 0);
+	litest_timeout_tapndrag(li);
+	litest_assert_button_event(li, button, LIBINPUT_BUTTON_STATE_RELEASED);
+
+	litest_assert_empty_queue(li);
+}
+END_TEST
+
+START_TEST(touchpad_tap_n_drag_auto_draglock_timeout)
+{
+	/* Test: auto drag-lock times out if finger not replaced */
+	struct litest_device *dev = litest_current_device();
+	struct libinput *li = dev->libinput;
+
+	litest_enable_tap(dev->libinput_device);
+	litest_disable_drag_lock(dev->libinput_device);
+	litest_disable_hold_gestures(dev->libinput_device);
+	litest_drain_events(li);
+
+	/* Tap */
+	litest_touch_down(dev, 0, 50, 50);
+	litest_touch_up(dev, 0);
+
+	/* Start drag */
+	litest_touch_down(dev, 0, 50, 50);
+	litest_timeout_tap(li);
+	litest_assert_button_event(li, BTN_LEFT, LIBINPUT_BUTTON_STATE_PRESSED);
+	litest_assert_empty_queue(li);
+
+	/* Move to left edge and release */
+	litest_touch_move_to(dev, 0, 50, 50, 1, 50, 20);
+	litest_drain_events(li);
+	litest_touch_up(dev, 0);
+
+	/* Auto drag-lock active - button still pressed */
+	litest_assert_empty_queue(li);
+
+	litest_timeout_tapndrag(li);
+	libinput_dispatch(li);
+	litest_assert_button_event(li, BTN_LEFT, LIBINPUT_BUTTON_STATE_RELEASED);
+
+	litest_assert_empty_queue(li);
+}
+END_TEST
+
+START_TEST(touchpad_tap_n_drag_auto_draglock_disabled_when_draglock_enabled_via_config)
+{
+	struct litest_device *dev = litest_current_device();
+	struct libinput *li = dev->libinput;
+
+	litest_enable_tap(dev->libinput_device);
+	/* sticky draglock because it's not timing sensitive */
+	litest_enable_drag_lock_sticky(dev->libinput_device);
+	litest_disable_hold_gestures(dev->libinput_device);
+	litest_drain_events(li);
+
+	/* tap and drag */
+	litest_touch_down(dev, 0, 50, 50);
+	litest_touch_up(dev, 0);
+
+	litest_touch_down(dev, 0, 50, 50);
+	litest_timeout_tap(li);
+	litest_assert_button_event(li, BTN_LEFT, LIBINPUT_BUTTON_STATE_PRESSED);
+	litest_assert_empty_queue(li);
+
+	/* release at edge */
+	litest_touch_move_to(dev, 0, 50, 50, 99, 50, 20);
+	litest_drain_events(li);
+	litest_touch_up(dev, 0);
+
+	litest_assert_empty_queue(li);
+
+	/* no auto release after timeout */
+	litest_timeout_tapndrag(li);
+	litest_assert_empty_queue(li);
+
+	/* tap to end */
+	litest_touch_down(dev, 0, 50, 50);
+	litest_touch_up(dev, 0);
+	litest_assert_button_event(li, BTN_LEFT, LIBINPUT_BUTTON_STATE_RELEASED);
+	litest_assert_empty_queue(li);
+}
+END_TEST
+
 START_TEST(touchpad_tap_n_drag_2fg)
 {
 	/* Test: tap with 1-3 fingers (multiple times), then a 1fg move
@@ -5502,7 +5678,21 @@ TEST_COLLECTION(touchpad_tap_drag)
 		litest_add_parametrized(touchpad_tap_n_drag_draglock, LITEST_TOUCHPAD, LITEST_ANY, params);
 		litest_add_parametrized(touchpad_tap_n_drag_draglock_timeout, LITEST_TOUCHPAD, LITEST_ANY, params);
 		litest_add_parametrized(touchpad_tap_n_drag_draglock_sticky, LITEST_TOUCHPAD, LITEST_ANY, params);
+	}
 
+	litest_with_parameters(params,
+			       "fingers", 'i', 3, 1, 2, 3,
+			       "edge", 'I', 4,
+			       litest_named_i32(LEFT),
+			       litest_named_i32(RIGHT),
+			       litest_named_i32(TOP),
+			       litest_named_i32(BOTTOM)) {
+		litest_add_parametrized(touchpad_tap_n_drag_auto_draglock_edge, LITEST_TOUCHPAD, LITEST_ANY, params);
+	}
+	litest_add(touchpad_tap_n_drag_auto_draglock_timeout, LITEST_TOUCHPAD, LITEST_ANY);
+	litest_add(touchpad_tap_n_drag_auto_draglock_disabled_when_draglock_enabled_via_config, LITEST_TOUCHPAD, LITEST_ANY);
+
+	litest_with_parameters(params, "fingers", 'i', 3, 1, 2, 3) {
 		litest_add_parametrized(touchpad_drag_disabled, LITEST_TOUCHPAD, LITEST_ANY, params);
 		litest_add_parametrized(touchpad_drag_disabled_immediate, LITEST_TOUCHPAD, LITEST_ANY, params);
 	}

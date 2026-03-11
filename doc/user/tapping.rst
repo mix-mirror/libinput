@@ -86,6 +86,12 @@ useful on small touchpads or with slow pointer acceleration.
 If drag lock is enabled, the release of the mouse buttons after the finger
 release (e) is triggered by a timeout (if in timeout mode) or by tapping again (f).
 
+libinput also supports an "auto drag-lock" feature: if drag lock is **disabled**
+but the dragging finger is released at the very edge of the touchpad,
+a drag lock automatically activates for a short timeout. This allows a user to
+quickly reset the finger to elsewhere on the touchpad and continue the dragging
+motion. If the finger is released elsewhere, no drag lock activates.
+
 If two fingers are supported by the hardware, a second finger can be used to
 drag while the first is held in-place.
 

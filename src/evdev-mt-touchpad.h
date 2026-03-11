@@ -450,6 +450,11 @@ struct tp_dispatch {
 
 		unsigned int nfingers_down; /* number of fingers down for tapping (excl.
 					       thumb/palm) */
+
+		/* Edges for auto drag-lock, in device coordinates */
+		struct {
+			int left, right, top, bottom;
+		} edges;
 	} tap;
 
 	struct {

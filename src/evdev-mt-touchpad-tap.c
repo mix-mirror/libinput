@@ -178,6 +178,13 @@ tp_tap_clear_timer(struct tp_dispatch *tp)
 	libinput_timer_cancel(&tp->tap.timer);
 }
 
+static bool
+tp_touch_near_any_edge(struct tp_dispatch *tp, struct tp_touch *t)
+{
+	return (t->point.x < tp->tap.edges.left || t->point.x > tp->tap.edges.right ||
+		t->point.y < tp->tap.edges.top || t->point.y > tp->tap.edges.bottom);
+}
+
 static void
 tp_tap_move_to_dead(struct tp_dispatch *tp, struct tp_touch *t)
 {
@@ -812,6 +819,7 @@ tp_tap_dragging_handle_event(struct tp_dispatch *tp,
 			     usec_t time,
 			     int nfingers_tapped)
 {
+	bool at_edge = false;
 
 	switch (event) {
 	case TAP_EVENT_TOUCH: {
@@ -825,7 +833,8 @@ tp_tap_dragging_handle_event(struct tp_dispatch *tp,
 		break;
 	}
 	case TAP_EVENT_RELEASE:
-		if (tp->tap.drag_lock != LIBINPUT_CONFIG_DRAG_LOCK_DISABLED) {
+		if (tp->tap.drag_lock != LIBINPUT_CONFIG_DRAG_LOCK_DISABLED ||
+		    (at_edge = tp_touch_near_any_edge(tp, t))) {
 			enum tp_tap_state dest[3] = {
 				TAP_STATE_1FGTAP_DRAGGING_WAIT,
 				TAP_STATE_2FGTAP_DRAGGING_WAIT,
@@ -833,8 +842,9 @@ tp_tap_dragging_handle_event(struct tp_dispatch *tp,
 			};
 			assert(nfingers_tapped >= 1 && nfingers_tapped <= 3);
 			tp->tap.state = dest[nfingers_tapped - 1];
-			if (tp->tap.drag_lock ==
-			    LIBINPUT_CONFIG_DRAG_LOCK_ENABLED_TIMEOUT)
+			if (at_edge ||
+			    tp->tap.drag_lock ==
+				    LIBINPUT_CONFIG_DRAG_LOCK_ENABLED_TIMEOUT)
 				tp_tap_set_draglock_timer(tp, time);
 		} else {
 			tp_tap_notify(tp,
@@ -1578,6 +1588,20 @@ tp_init_tap(struct tp_dispatch *tp)
 	tp->tap.want_map = tp->tap.map;
 	tp->tap.drag_enabled = tp_drag_default(tp->device);
 	tp->tap.drag_lock = tp_drag_lock_default(tp->device);
+
+	struct evdev_device *device = tp->device;
+
+	const struct input_absinfo *absx = device->abs.absinfo_x;
+	const struct input_absinfo *absy = device->abs.absinfo_y;
+	assert(absx && absy);
+
+	struct phys_coords mm = { 5.0, 5.0 };
+	struct device_coords edge_margin = evdev_device_mm_to_units(device, &mm);
+
+	tp->tap.edges.left = edge_margin.x;
+	tp->tap.edges.right = (absx->maximum - edge_margin.x + absx->minimum);
+	tp->tap.edges.top = edge_margin.y;
+	tp->tap.edges.bottom = (absy->maximum - edge_margin.y + absy->minimum);
 
 	snprintf(timer_name,
 		 sizeof(timer_name),
