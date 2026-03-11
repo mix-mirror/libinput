@@ -2806,6 +2806,7 @@ out:
 			libinput_device_unref(d->device);
 		free(d->devnode);
 		libevdev_free(d->evdev);
+		libevdev_free(d->evdev_prev);
 	}
 
 	libinput_unref(ctx.libinput);
