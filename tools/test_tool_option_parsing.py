@@ -117,7 +117,7 @@ class LibinputDebugGui(LibinputTool):
         assert subtool == "debug-gui"
         super().__init__(subtool)
 
-        debug_gui_enabled = "@MESON_ENABLED_DEBUG_GUI@" == "True"
+        debug_gui_enabled = "@MESON_ENABLED_DEBUG_GUI@".lower() == "true"
         if not debug_gui_enabled:
             pytest.skip()
 

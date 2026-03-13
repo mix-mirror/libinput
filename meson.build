@@ -766,7 +766,7 @@ executable('ptraccel-debug',
 if is_debug_build
 	config_tool_option_test = configuration_data()
 	config_tool_option_test.set('DISABLE_WARNING', 'yes')
-	config_tool_option_test.set('MESON_ENABLED_DEBUG_GUI', get_option('debug-gui'))
+	config_tool_option_test.set('MESON_ENABLED_DEBUG_GUI', get_option('debug-gui').to_string())
 	config_tool_option_test.set('MESON_BUILD_ROOT', meson.current_build_dir())
 	config_tool_option_test.set('TOOL_PATH', libinput_tool.full_path())
 	tool_option_test = configure_file(input: 'tools/test_tool_option_parsing.py',
