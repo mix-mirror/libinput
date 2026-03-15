@@ -59,13 +59,16 @@ tap-and-drag enabled by default.
           middle-click drag, tap with three fingers followed by a
           single-finger drag.
 
-Also optional is a feature called "drag lock". With drag lock disabled, lifting
-the finger will stop any drag process. When enabled, the drag
-process continues even after lifting a finger but can be ended
-with an additional tap. If timeout-based drag-locks are enabled
-the drag process will also automatically end once the finger has
-been lifted for an implementation-specific timeout. Drag lock can be
-enabled and disabled with **libinput_device_config_tap_set_drag_lock_enabled()**.
+Also optional is a feature called "drag lock". With drag lock **disabled**,
+lifting the finger will stop any drag process. When **enabled**, the drag
+process continues even after lifting a finger, allowing the user to
+reset the finger position and keep moving without releasing the drag.
+
+libinput supports two variations of this drag lock: "sticky"  and "timeout".
+In sticky mode, the drag lock must be ended with an explicit additional tap.
+In timeout mode, the drag lock ends automatically if no finger was put back on
+the touchpad within a timeout.  Drag lock can be enabled and disabled with
+**libinput_device_config_tap_set_drag_lock_enabled()**.
 Note that drag lock only applies if tap-and-drag is enabled.
 
 .. figure:: tap-n-drag.svg
@@ -81,11 +84,7 @@ position can be reset by lifting and quickly setting it down again on the
 touchpad (d). This will be interpreted as continuing move and is especially
 useful on small touchpads or with slow pointer acceleration.
 If drag lock is enabled, the release of the mouse buttons after the finger
-release (e) is triggered by a timeout. To release the button immediately,
-simply tap again (f).
-
-If drag lock is enabled in sticky mode there is no timeout after
-releasing a finger and an extra tap is required to release the button.
+release (e) is triggered by a timeout (if in timeout mode) or by tapping again (f).
 
 If two fingers are supported by the hardware, a second finger can be used to
 drag while the first is held in-place.
