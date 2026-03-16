@@ -1123,7 +1123,7 @@ START_TEST(touchpad_tap_n_drag)
 		break;
 	}
 	litest_touch_down(dev, 0, 50, 50);
-	litest_touch_move_to(dev, 0, 50, 50, 80, 80, 20);
+	litest_touch_move_to(dev, 0, 50, 50, 70, 70, 20);
 
 	litest_dispatch(li);
 
