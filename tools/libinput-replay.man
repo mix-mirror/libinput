@@ -24,7 +24,7 @@ Replay the recording after waiting for s seconds. This replaces the default
 interactive prompt to start the replay.
 .SH NOTES
 .PP
-This tool replays events from a recording through the the kernel and is
+This tool replays events from a recording through the kernel and is
 independent of libinput. In other words, updating or otherwise changing
 libinput will not alter the output from this tool. libinput itself does not
 need to be in use to replay events.

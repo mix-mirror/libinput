@@ -52,7 +52,7 @@ light grey to help debug cusor positioning. The cursor movement is
 the one as seen by libinput and may not match the cursor movement of the
 display server.
 .PP
-The unaccelerated cusor motion is displayed as a grey upside-down triangle.
+The unaccelerated cursor motion is displayed as a grey upside-down triangle.
 The movement of this cursor typically reflects the relative motion in device
 units and can differ significantly to the normal cursor movement.
 .PP

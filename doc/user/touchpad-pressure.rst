@@ -50,7 +50,7 @@ touchpads. Some devices can detect multiple fingers but only provide
 
 Some devices provide additional touch size information through
 the ``ABS_MT_TOUCH_MAJOR/ABS_MT_TOUCH_MINOR`` axes and/or
-the ``ABS_MT_WIDTH_MAJOR/ABS_MT_WIDTH_MINOR`` axes. These axes specifcy
+the ``ABS_MT_WIDTH_MAJOR/ABS_MT_WIDTH_MINOR`` axes. These axes specify
 the size of the touch ellipse. While the kernel documentation specifies how
 these axes are supposed to be mapped, few devices forward reliable
 information. libinput uses these values together with a device-specific

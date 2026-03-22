@@ -1361,7 +1361,7 @@ evdev_read_wheel_click_count_prop(struct evdev_device *device,
 
 	evdev_log_error(device,
 			"mouse wheel click count is present but invalid, "
-			"using %d degrees for angle instead instead\n",
+			"using %d degrees for angle instead\n",
 			DEFAULT_WHEEL_CLICK_ANGLE);
 	*angle = DEFAULT_WHEEL_CLICK_ANGLE;
 

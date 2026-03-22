@@ -333,7 +333,7 @@ tp_new_touch(struct tp_dispatch *tp, struct tp_touch *t, usec_t time)
 	   again. That's a kernel bug, so let's complain. */
 	if (t->state == TOUCH_MAYBE_END) {
 		evdev_log_bug_kernel(tp->device,
-				     "touch %d ended and began in in same frame.\n",
+				     "touch %d ended and began in same frame.\n",
 				     t->index);
 		tp->nfingers_down++;
 		t->state = TOUCH_UPDATE;
@@ -1335,7 +1335,7 @@ tp_position_fake_touches(struct tp_dispatch *tp)
 		return;
 
 	/* We have at least one fake touch down. Find the top-most real
-	 * touch and copy its coordinates over to to all fake touches.
+	 * touch and copy its coordinates over to all fake touches.
 	 * This is more reliable than just taking the first touch.
 	 */
 	for (i = 0; i < tp->num_slots; i++) {

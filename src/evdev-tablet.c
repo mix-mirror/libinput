@@ -178,7 +178,7 @@ tablet_filter_axis_fuzz(const struct tablet_dispatch *tablet,
 
 	fuzz = libevdev_get_abs_fuzz(device->evdev, evdev_usage_code(e->usage));
 
-	/* ABS_DISTANCE doesn't have have fuzz set and causes continuous
+	/* ABS_DISTANCE doesn't have fuzz set and causes continuous
 	 * updates for the cursor/lens tools. Add a minimum fuzz of 2, same
 	 * as the xf86-input-wacom driver
 	 */
@@ -2465,7 +2465,7 @@ tablet_setup_touch_arbitration(struct evdev_device *device,
 		struct libinput_device_group *group2 =
 			libinput_device_get_device_group(&new_device->base);
 
-		/* same phsical device? -> better, otherwise keep the one we have */
+		/* same physical device? -> better, otherwise keep the one we have */
 		if (group1 != group2)
 			return;
 

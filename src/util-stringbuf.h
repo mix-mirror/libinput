@@ -121,7 +121,7 @@ stringbuf_ensure_space(struct stringbuf *b, size_t sz)
 }
 
 /**
- * Append the the data from the fd to the string buffer.
+ * Append the data from the fd to the string buffer.
  */
 static inline int
 stringbuf_append_from_fd(struct stringbuf *b, int fd, size_t maxlen)

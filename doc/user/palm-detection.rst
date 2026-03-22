@@ -14,7 +14,7 @@ touch the bottom edges of the touchpad during normal interaction.
 
 Interference from a palm depends on the size of the touchpad and the position
 of the user's hand. Data from touchpads showed that almost all palm events
-during tying on a Lenovo T440 happened in the left-most and right-most 5% of
+during typing on a Lenovo T440 happened in the left-most and right-most 5% of
 the touchpad. The T440 series has one of the largest touchpads, other
 touchpads are less affected by palm touches.
 
@@ -52,7 +52,7 @@ Palm detection based on pressure
 
 The simplest form of palm detection labels a touch as palm when the pressure
 value goes above a certain threshold. This threshold is usually high enough
-that it cannot be triggered by a finger movement. One a touch is labelled as
+that it cannot be triggered by a finger movement. Once a touch is labelled as
 palm based on pressure, it will remain so even if the pressure drops below
 the threshold again. This ensures that a palm remains a palm even when the
 pressure changes as the user is typing.
@@ -187,7 +187,7 @@ Stylus-touch arbitration
 A special case of palm detection is touch arbitration on devices that
 support styli. When interacting with a stylus on the screen, parts of the
 hand may touch the surface and trigger touches. As the user is currently
-interacting with the stylus, these touches would interfer with the correct
+interacting with the stylus, these touches would interfere with the correct
 working of the stylus.
 
 libinput employs a method similar to :ref:`disable-while-typing` to detect

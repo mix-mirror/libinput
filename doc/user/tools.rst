@@ -365,7 +365,7 @@ The ``libinput analyze`` tool is a multiplexer for various sub-tools that
 can analyze input events previously recorded from a device.
 
 Please see the **libinput-analyze(1)** man page for information about what
-tools are available and the man page for each respective too.
+tools are available and the man page for each respective tool.
 
 
 .. _libinput-quirks:

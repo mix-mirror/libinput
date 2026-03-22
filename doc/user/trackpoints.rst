@@ -25,7 +25,7 @@ Button scrolling on trackpoints
 ------------------------------------------------------------------------------
 
 Trackpoint devices have :ref:`button_scrolling` enabled by default. This may
-interfer with middle-button dragging, if middle-button dragging is required
+interfere with middle-button dragging, if middle-button dragging is required
 by a user then button scrolling must be disabled.
 
 .. _trackpoint_range:

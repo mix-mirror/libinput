@@ -30,7 +30,7 @@ The "bounce" method guarantees that all press events are delivered
 immediately and most release events are delivered immediately. The
 "spurious" method requires that release events are delayed, libinput thus
 does not enable this method unless a faulty event sequence is detected. A
-message is printed to the log when spurious deboucing was detected.
+message is printed to the log when spurious debouncing was detected.
 
 libinput's debouncing is supposed to correct hardware damage or
 substandard hardware. Debouncing also exists as an accessibility feature

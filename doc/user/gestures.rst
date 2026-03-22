@@ -99,7 +99,7 @@ Hold gestures have three potential logical states:
 - **begin**: one or more fingers are placed on the device at the same time
 - **end**: all fingers are removed and the device enters a neutral logical state
 - **end(cancelled)**: all fingers are part of a known interaction and the
-  currenthold gesture is no longer active. This may also occurs when
+  current hold gesture is no longer active. This may also occur when
   switching between hold gestures with different finger counts.
 
 .. note:: By definition, a hold gesture does not move and thus no coordinate
@@ -359,7 +359,7 @@ Touchpoints are assigned in sequential order and only the first two touch
 points are trackable. For libinput this produces an ambiguity where it is
 impossible to detect whether a gesture is a pinch gesture or a swipe gesture
 whenever a user puts the index and middle finger down first. Since the third
-finger does not have positional information, it's location cannot be
+finger does not have positional information, its location cannot be
 determined.
 
 .. figure:: gesture-2fg-ambiguity.svg

@@ -8,7 +8,7 @@ Touchpad jitter describes random movement by a few pixels even when the
 user's finger is unmoving.
 
 libinput has a mechanism called a **hysteresis** to avoid that jitter. When
-active, movement with in the **hysteresis margin** is discarded. If the
+active, movement within the **hysteresis margin** is discarded. If the
 movement delta is larger than the margin, the movement is passed on as
 pointer movement. This is a simplified summary, developers should
 read the implementation of the hysteresis in ``src/evdev.c``.

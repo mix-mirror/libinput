@@ -47,7 +47,7 @@ for those devices it is expected to be implemented by the toolkit.
 Three-finger drag
 ------------------------------------------------------------------------------
 
-Three-finger drag allows emulates the mouse button down while three fingers
+Three-finger drag emulates the mouse button down while three fingers
 are down on a touchpad without the need to press a physical button or use
 :ref:`tapndrag`. See :ref:`drag_3fg` for details on how this feature works.
 
@@ -165,7 +165,7 @@ most touchpads.
 Disable while trackpointing
 ------------------------------------------------------------------------------
 
-DWTP is a form of palm detecion for devices that have a trackpoint (like
+DWTP is a form of palm detection for devices that have a trackpoint (like
 Thinkpads). While the user is using the trackpoint, the touchpad is disabled,
 being enabled again after a timeout. See :ref:`disable-while-trackpointing` for
 more info.

@@ -77,7 +77,7 @@ wheel:
 | 20          |      20    | 1             | 120  |
 +-------------+------------+---------------+------+
 
-Fast scrolling may trigger cover than one detent per event and thus each
+Fast scrolling may trigger more than one detent per event and thus each
 event may contain multiples of the value, discrete or v120 value:
 
 +-------------+------------+---------------+------+

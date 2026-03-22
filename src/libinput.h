@@ -348,7 +348,7 @@ enum libinput_tablet_pad_strip_axis_source {
  * LIBINPUT_TABLET_TOOL_TYPE_PEN.
  * Use libinput_tablet_tool_get_tool_id() to get a specific model where applicable.
  *
- * Note that on some device, the eraser tool is on the tail end of a pen
+ * Note that on some devices, the eraser tool is on the tail end of a pen
  * device. On other devices, e.g. MS Surface 3, the eraser is the pen tip
  * while a button is held down.
  *
@@ -730,7 +730,7 @@ enum libinput_switch {
 	 * If the switch is in state @ref LIBINPUT_SWITCH_STATE_OFF, the
 	 * device is in laptop mode. If the switch is in state @ref
 	 * LIBINPUT_SWITCH_STATE_ON, the device is in tablet mode and the
-	 * keyboard or touchpad may not be  accessible.
+	 * keyboard or touchpad may not be accessible.
 	 *
 	 * It is up to the caller to identify which devices are inaccessible
 	 * in tablet mode.
@@ -828,7 +828,7 @@ enum libinput_event_type {
 	LIBINPUT_EVENT_POINTER_AXIS,
 
 	/**
-	 * A scroll event from a wheel. This event is sent is sent **in
+	 * A scroll event from a wheel. This event is sent **in
 	 * addition** to the @ref LIBINPUT_EVENT_POINTER_AXIS
 	 * event for all events with a
 	 * libinput_event_pointer_get_axis_source() of @ref
@@ -843,7 +843,7 @@ enum libinput_event_type {
 
 	/**
 	 * A scroll event caused by the movement of one or more fingers on a
-	 * device. This event is sent is sent **in addition** to the @ref
+	 * device. This event is sent **in addition** to the @ref
 	 * LIBINPUT_EVENT_POINTER_AXIS event for all events with a
 	 * libinput_event_pointer_get_axis_source() of @ref
 	 * LIBINPUT_POINTER_AXIS_SOURCE_FINGER. Ignore @ref
@@ -857,7 +857,7 @@ enum libinput_event_type {
 
 	/**
 	 * A scroll event from a continuous scroll source, e.g. button
-	 * scrolling. This event is sent is sent **in
+	 * scrolling. This event is sent **in
 	 * addition** to the @ref LIBINPUT_EVENT_POINTER_AXIS
 	 * event for all events with a
 	 * libinput_event_pointer_get_axis_source() of @ref
@@ -2423,7 +2423,7 @@ libinput_event_tablet_tool_wheel_has_changed(struct libinput_event_tablet_tool *
  * width of the device. See the libinput documentation for more details.
  *
  * @param event The libinput tablet tool event
- * @return The current value of the the axis
+ * @return The current value of the axis
  *
  * @since 1.2
  */
@@ -2446,7 +2446,7 @@ libinput_event_tablet_tool_get_x(struct libinput_event_tablet_tool *event);
  * width of the device. See the libinput documentation for more details.
  *
  * @param event The libinput tablet tool event
- * @return The current value of the the axis
+ * @return The current value of the axis
  *
  * @since 1.2
  */
@@ -2500,7 +2500,7 @@ libinput_event_tablet_tool_get_dy(struct libinput_event_tablet_tool *event);
  * If this axis does not exist on the current tool, this function returns 0.
  *
  * @param event The libinput tablet tool event
- * @return The current value of the the axis
+ * @return The current value of the axis
  *
  * @since 1.2
  */
@@ -2516,7 +2516,7 @@ libinput_event_tablet_tool_get_pressure(struct libinput_event_tablet_tool *event
  * If this axis does not exist on the current tool, this function returns 0.
  *
  * @param event The libinput tablet tool event
- * @return The current value of the the axis
+ * @return The current value of the axis
  *
  * @since 1.2
  */
@@ -2556,7 +2556,7 @@ libinput_event_tablet_tool_get_tilt_x(struct libinput_event_tablet_tool *event);
  * If this axis does not exist on the current tool, this function returns 0.
  *
  * @param event The libinput tablet tool event
- * @return The current value of the the axis in degrees
+ * @return The current value of the axis in degrees
  *
  * @since 1.2
  */
@@ -2578,7 +2578,7 @@ libinput_event_tablet_tool_get_tilt_y(struct libinput_event_tablet_tool *event);
  * If this axis does not exist on the current tool, this function returns 0.
  *
  * @param event The libinput tablet tool event
- * @return The current value of the the axis
+ * @return The current value of the axis
  *
  * @since 1.2
  */
@@ -2596,7 +2596,7 @@ libinput_event_tablet_tool_get_rotation(struct libinput_event_tablet_tool *event
  * If this axis does not exist on the current tool, this function returns 0.
  *
  * @param event The libinput tablet tool event
- * @return The current value of the the axis
+ * @return The current value of the axis
  *
  * @since 1.2
  */
@@ -2630,7 +2630,7 @@ libinput_event_tablet_tool_get_size_major(struct libinput_event_tablet_tool *eve
  * rotation must be taken into account.
  *
  * Where no rotation is available on a tool, or where rotation is zero, the
- * minor axis aligns with the y axis and the minor axis with the x axis.
+ * major axis aligns with the y axis and the minor axis with the x axis.
  *
  * If this axis does not exist on the current tool, this function returns 0.
  *
@@ -2823,10 +2823,10 @@ libinput_event_tablet_tool_get_button_state(struct libinput_event_tablet_tool *e
  * @ingroup event_tablet
  *
  * For the button of a @ref LIBINPUT_EVENT_TABLET_TOOL_BUTTON event, return the total
- * number of buttons pressed on all devices on the associated seat after the
+ * number of buttons pressed on all devices on the associated seat after
  * the event was triggered.
  *
- " @note It is an application bug to call this function for events other than
+ * @note It is an application bug to call this function for events other than
  * @ref LIBINPUT_EVENT_TABLET_TOOL_BUTTON. For other events, this function returns 0.
  *
  * @param event The libinput tablet tool event
@@ -3205,7 +3205,7 @@ libinput_event_tablet_pad_get_base_event(struct libinput_event_tablet_pad *event
  * returns 0.
  *
  * @param event The libinput tablet pad event
- * @return The current value of the the axis
+ * @return The current value of the axis
  * @retval -1 The finger was lifted
  *
  * @since 1.3
@@ -3259,8 +3259,8 @@ libinput_event_tablet_pad_get_ring_source(struct libinput_event_tablet_pad *even
  * logical orientation.
  *
  * If the source is @ref LIBINPUT_TABLET_PAD_STRIP_SOURCE_FINGER,
- * libinput sends a terminating event with a ring value of -1 when the
- * finger is lifted from the ring. A caller may use this information to e.g.
+ * libinput sends a terminating event with a strip value of -1 when the
+ * finger is lifted from the strip. A caller may use this information to e.g.
  * determine if kinetic scrolling should be triggered.
  *
  * @note It is an application bug to call this function for events other than
@@ -3268,7 +3268,7 @@ libinput_event_tablet_pad_get_ring_source(struct libinput_event_tablet_pad *even
  * returns 0.
  *
  * @param event The libinput tablet pad event
- * @return The current value of the the axis
+ * @return The current value of the axis
  * @retval -1 The finger was lifted
  *
  * @since 1.3
@@ -3404,7 +3404,7 @@ libinput_event_tablet_pad_get_key_state(struct libinput_event_tablet_pad *event)
  * returns 0.
  *
  * @param event The libinput tablet pad event
- * @return The delta of the the axis
+ * @return The delta of the axis
  *
  * @since 1.26
  */
@@ -3529,7 +3529,7 @@ libinput_event_tablet_pad_get_time_usec(struct libinput_event_tablet_pad *event)
  * @ingroup event_switch
  *
  * Return the switch that triggered this event.
- * For pointer events that are not of type @ref
+ * For switch events that are not of type @ref
  * LIBINPUT_EVENT_SWITCH_TOGGLE, this function returns 0.
  *
  * @note It is an application bug to call this function for events other than
@@ -3665,7 +3665,7 @@ libinput_udev_create_context(const struct libinput_interface *interface,
  * available on this seat, or if devices are available but fail to open in
  * @ref libinput_interface::open_restricted. Devices that do not have the
  * minimum capabilities to be recognized as pointer, keyboard or touch
- * device are ignored. Such devices and those that failed to open
+ * device are ignored. Such devices and those that failed to open are
  * ignored until the next call to libinput_resume().
  *
  * This function may only be called once per context.
@@ -3762,7 +3762,7 @@ libinput_path_remove_device(struct libinput_device *device);
  * Paths are not traversed recursively.
  *
  * Plugins that have a 0 byte size shadow any plugins with the same name
- * but do not provide any fuctionality. This allows disabling a plugin
+ * but do not provide any functionality. This allows disabling a plugin
  * by simply dropping an empty file in a higher-priority directory.
  *
  * This function must be called before libinput_plugin_system_load_plugins().
@@ -5838,7 +5838,7 @@ libinput_device_config_accel_apply(struct libinput_device *device,
  * types (e.g. scrolling) may be added in the future.
  *
  * The special type @ref LIBINPUT_ACCEL_TYPE_FALLBACK specifies the acceleration
- * function to be moved for any movement produced by the device that does not
+ * function to be used for any movement produced by the device that does not
  * have a specific acceleration type defined.
  *
  * Use to specify the acceleration function type in
@@ -5879,7 +5879,7 @@ enum libinput_config_accel_type {
  *
  * Each custom acceleration function is defined by ``n`` points spaced uniformly
  * along the x-axis starting from 0 and continuing in a constant step size.
- * There by the function is defined by the following points:
+ * Thereby the function is defined by the following points:
  * (0 * step, f[0]), (1 * step, f[1]), ..., ((n - 1) * step, f[n - 1]).
  * The x-axis represents the device-speed in device units per millisecond.
  * The y-axis represents the pointer-speed.
@@ -7099,7 +7099,7 @@ libinput_device_config_rotation_get_default_angle(struct libinput_device *device
  * Check if a tablet tool can have a custom pressure range.
  *
  * @param tool The libinput tool
- * @return Non-zero if a device has an adjustible pressure range, zero otherwise.
+ * @return Non-zero if a device has an adjustable pressure range, zero otherwise.
  *
  * @see libinput_tablet_tool_config_pressure_range_set
  * @see libinput_tablet_tool_config_pressure_range_get_minimum

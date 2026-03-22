@@ -76,8 +76,8 @@ Example output of the tool is below: ::
 
 The example output shows five completed touch sequences and one ongoing one.
 For each, the respective minimum and maximum pressure values are printed as
-well as some statistics. The ``down`` column show that each sequence was
-considered logically down at some point (see the threholds in the last line),
+well as some statistics. The ``down`` column shows that each sequence was
+considered logically down at some point (see the thresholds in the last line),
 two of the sequences were considered thumbs. This is an interactive tool and
 its output may change frequently. Refer to the
 **libinput-measure-touchpad-pressure(1)** man page for more details.
@@ -112,7 +112,7 @@ Once the thresholds are decided on (e.g. 10 and 8), they can be enabled with
      AttrPalmPressureThreshold=150
      AttrThumbPressureThreshold=100
 
-The file name **must** be ``/etc/libinput/local-overrides.quirks``. The
+The file name **must** be ``/etc/libinput/local-overrides.quirks``.
 The first line is the section name and can be free-form. The ``Match``
 directives limit the quirk to your touchpad, make sure the device name
 matches your device's name (see ``libinput record``'s output). The dmi

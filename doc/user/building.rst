@@ -13,7 +13,7 @@ Instructions on how to build libinput and its tools and how to build against
 libinput.
 
 The build instruction on this page detail how to overwrite your
-system-provided libinput with one from the git repository, see
+system-provided libinput with one from the git repository,
 see :ref:`reverting_install` to revert to the previous state.
 
 .. _distribution_repos:
@@ -27,7 +27,7 @@ the latest libinput without building it manually.
 
 .. note:: The list below is provided for convenience. The libinput community
    cannot provide any guarantees that the packages in those repositories are
-   correct, up-to-date and/or unmodified from the git branch. Due dilligence
+   correct, up-to-date and/or unmodified from the git branch. Due diligence
    is recommended.
 
 The following repositories provide an up-to-date package for libinput:

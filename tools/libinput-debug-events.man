@@ -21,7 +21,7 @@ This tool usually needs to be run as root to have access to the
 .SH OPTIONS
 .TP 8
 .B \-\-compress\-motion\-events
-Compress repeated motion, axis, scrool, and gesture update
+Compress repeated motion, axis, scroll, and gesture update
 events into a single line. This only takes effect if stdout is a TTY.
 .TP 8
 .B \-\-device \fI/dev/input/event0\fR

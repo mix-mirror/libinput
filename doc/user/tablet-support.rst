@@ -67,7 +67,7 @@ tools are capable of detecting 1 gram of pressure.
 
 libinput uses a device-specific pressure threshold to determine when the tip
 is considered logically down. As a result, libinput may send a nonzero
-pressure value while the tip is logically up. Most application can and
+pressure value while the tip is logically up. Most applications can and
 should ignore pressure information until they receive the event of type
 **LIBINPUT_EVENT_TABLET_TOOL_TIP**. Applications that require extremely
 fine-grained pressure sensitivity should use the pressure data instead of
@@ -284,7 +284,7 @@ with **libinput_tablet_tool_get_tool_id()** but makes no promises about the
 content or format of the ID.
 
 libinput currently supports Wacom-style tool IDs as provided on the Wacom
-Intuos 3, 4, 5, Wacon Cintiq and Wacom Intuos Pro series. The tool ID can
+Intuos 3, 4, 5, Wacom Cintiq and Wacom Intuos Pro series. The tool ID can
 be used to distinguish between e.g. a Wacom Classic Pen or a Wacom Pro Pen.
 It is  the caller's responsibility to interpret the tool ID.
 

@@ -48,8 +48,8 @@ file_destroy(struct file *f)
 DEFINE_DESTROY_CLEANUP_FUNC(file);
 
 /**
- * Appends to the given list all files files in the given directory that end
- * with the given with the given suffix.
+ * Appends to the given list all files in the given directory that end
+ * with the given suffix.
  */
 static void
 filenames(const char *directory, const char *suffix, struct list *list)

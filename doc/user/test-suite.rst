@@ -15,7 +15,7 @@ run to check for behavior changes and/or regressions. For quick iteration,
 the number of tests to run can be filtered, see :ref:`test-filtering`.
 This allows for developers to verify a subset of tests (e.g.
 touchpad tap-to-click) while hacking on that specific feature and only run
-the full suite when development is done finished.
+the full suite when development is finished.
 
 .. note:: The test suite relies on udev and the kernel, specifically uinput.
 	It creates virtual input devices and replays the events. This may
@@ -38,7 +38,7 @@ Job control in the test suite
 The test suite runner has a make-like job control enabled by the ``-j`` or
 ``--jobs`` flag and will fork off as many parallel processes as given by this
 flag. The default if unspecified is 8. When debugging a specific test case
-failure it is recommended to employ test filtures (see :ref:`test-filtering`)
+failure it is recommended to employ test filters (see :ref:`test-filtering`)
 and disable parallel tests. The test suite automatically disables parallel
 make when run in gdb.
 

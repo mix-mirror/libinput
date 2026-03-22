@@ -39,7 +39,7 @@ Velocity calculation
 ------------------------------------------------------------------------------
 
 The device's speed of movement is measured across multiple input events
-through so-called "trackers". Each event prepends a the tracker item, each
+through so-called "trackers". Each event prepends a tracker item, each
 subsequent tracker contains the delta of that item to the current position,
 the timestamp of the event that created it and the cardinal direction of the
 movement at the time. If a device moves into the same direction, the

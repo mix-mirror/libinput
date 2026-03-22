@@ -233,7 +233,7 @@ A dictionary with libinput-specific information.
 A dictionary with system information.
 .TP 8
 .B devices: {...}
-A list of devices containing the description and and events of each device.
+A list of devices containing the description and events of each device.
 
 .SS libinput
 .TP 8

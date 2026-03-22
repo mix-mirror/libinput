@@ -25,7 +25,7 @@ Physically separate buttons
 
 Touchpads with physical buttons usually provide two buttons, left and right.
 A few touchpads with three buttons exist, and Apple used to have touchpads
-with a single physical buttons until ca 2008. Touchpads with only two
+with a single physical button until ca 2008. Touchpads with only two
 buttons require the software stack to emulate a middle button. libinput does
 this when both buttons are pressed simultaneously.
 

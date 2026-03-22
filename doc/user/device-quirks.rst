@@ -46,7 +46,7 @@ Installing temporary local device quirks
 
 The model quirks are part of the source distribution and should never be
 modified. For temporary local workarounds, libinput reads the
-``/etc/libinput/local-overrides.quirks`` file. Users may add a sections to
+``/etc/libinput/local-overrides.quirks`` file. Users may add sections to
 this file to add a device quirk for a local device but beware that **any
 modification must be upstreamed** or it may cease to work at any time.
 

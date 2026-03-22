@@ -198,7 +198,7 @@ events is performed within the dispatch method.
 
       evdev [label="evdev_device_dispatch()"]
 
-      plugins [label="plugin pipline"]
+      plugins [label="plugin pipeline"]
 
       fallback [label="fallback_interface_process()"];
       touchpad [label="tp_interface_process()"]

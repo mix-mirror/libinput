@@ -87,7 +87,7 @@ suggested hwdb entry. ::
 
 
 If there are discrepancies between the coordinate range the kernels
-advertises and what what the touchpad sends, the hwdb entry should be added to the
+advertises and what the touchpad sends, the hwdb entry should be added to the
 ``60-evdev.hwdb`` file provided by the `systemd project <https://github.com/systemd/systemd>`_.
 An example commit can be found
 `here <https://github.com/systemd/systemd/commit/26f667eac1c5e89b689aa0a1daef6a80f473e045>`_.

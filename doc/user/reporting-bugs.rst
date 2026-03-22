@@ -185,7 +185,7 @@ When you file a bug, please attach the following information:
 
 - a virtual description of your input device, see :ref:`libinput-record`.
   This is the most important piece of information, do not forget it!
-- the vendor model number of the device (e.g. "Sony Plastation3 controller")
+- the vendor model number of the device (e.g. "Sony PlayStation3 controller")
 
 .. _udev_info:
 
@@ -368,7 +368,7 @@ them.
   without someone stepping up to do the work. If you do see this tag, do ask
   for guidance on how to implement it.
 - **hw issue**: an issue that affects a specific device and is a hardware
-  bug, not a software bug. Often these needs to be worked around in libinput
+  bug, not a software bug. Often these need to be worked around in libinput
   but there are cases where a hw issue ends up as *cantfix*.
 - **janitor**: a cleanup task that does not substantially affect how
   libinput works. These are usually good bugs for newcomers to start on.
@@ -389,7 +389,7 @@ them.
   *cantfix*.
 - **wontfix**: this issue will not get fixed. This tag is usually assigned
   to feature requests that are outside the scope of libinput or would put an
-  unreasonable maintenance burdern on the maintainers.
+  unreasonable maintenance burden on the maintainers.
 
 These tags are high-level categories only, always look for the comments in
 the issue to get further details.
