@@ -1810,9 +1810,9 @@ evdev_disable_accelerometer_axes(struct evdev_device *device)
 	libevdev_disable_event_code(evdev, EV_ABS, ABS_Y);
 	libevdev_disable_event_code(evdev, EV_ABS, ABS_Z);
 
-	libevdev_disable_event_code(evdev, EV_ABS, REL_X);
-	libevdev_disable_event_code(evdev, EV_ABS, REL_Y);
-	libevdev_disable_event_code(evdev, EV_ABS, REL_Z);
+	libevdev_disable_event_code(evdev, EV_REL, REL_X);
+	libevdev_disable_event_code(evdev, EV_REL, REL_Y);
+	libevdev_disable_event_code(evdev, EV_REL, REL_Z);
 }
 
 static bool
