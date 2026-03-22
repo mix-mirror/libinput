@@ -39,6 +39,7 @@
 
 #include "util-input-event.h"
 #include "util-macros.h"
+#include "util-strings.h"
 
 #include "shared.h"
 
@@ -91,19 +92,20 @@ print_line(const char *format, ...)
 static void
 print_buttons(struct context *ctx, unsigned int *buttons, size_t sz)
 {
-	char buf[256] = { 0 };
-	size_t len = 0;
+	_autostrvfree_ char **strv = NULL;
 
 	for (size_t i = 0; i < sz; i++) {
-		const char *name;
-
 		if (buttons[i] == 0)
 			continue;
 
-		name = libevdev_event_code_get_name(EV_KEY, buttons[i]);
-		len += snprintf(&buf[len], sizeof(buf) - len, "%s ", name);
+		strv = strv_append_printf(
+			strv,
+			"%s",
+			libevdev_event_code_get_name(EV_KEY, buttons[i]));
 	}
-	print_line("  buttons: %s", buf);
+
+	_autofree_ char *btnstr = strv_join(strv, " ");
+	print_line("  buttons: %s", btnstr ? btnstr : "");
 }
 
 static void
