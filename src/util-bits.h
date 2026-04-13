@@ -260,6 +260,8 @@ _nonnull_(1) static inline void _infmask_ensure_size(infmask_t *mask, unsigned i
 	size_t required = _infmask_size_for_bit(bit);
 	if (required > mask->nmasks) {
 		mask->mask = realloc(mask->mask, required * sizeof(bitmask_t));
+		if (!mask->mask)
+			abort();
 		/* Zero out the new memory */
 		for (size_t i = mask->nmasks; i < required; i++)
 			mask->mask[i] = bitmask_new();
