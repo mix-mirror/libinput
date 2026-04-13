@@ -6293,6 +6293,13 @@ START_TEST(touch_arbitration_outside_rect)
 	double x, y;
 	bool is_touchpad;
 
+	bool tilt_left = litest_test_param_get_bool(test_env->params, "tilt-left");
+	if (tilt_left) {
+		litest_axis_set_value(axes, ABS_TILT_X, 40);
+	} else {
+		litest_axis_set_value(axes, ABS_TILT_X, 80);
+	}
+
 	other = paired_device(dev);
 	if (other == LITEST_NO_DEVICE)
 		return LITEST_NOT_APPLICABLE;
@@ -6304,8 +6311,8 @@ START_TEST(touch_arbitration_outside_rect)
 	if (is_touchpad)
 		return LITEST_NOT_APPLICABLE;
 
-	x = 20;
-	y = 70;
+	x = 50;
+	y = 50;
 
 	/* disable prox-out timer quirk */
 	litest_tablet_proximity_in(dev, x, y - 1, axes);
@@ -6321,37 +6328,17 @@ START_TEST(touch_arbitration_outside_rect)
 	litest_tablet_motion(dev, x, y, axes);
 	litest_drain_events(li);
 
-	/* left of rect */
-	litest_touch_sequence(finger, 0, x - 10, y + 2, x - 10, y + 20, 3);
-	litest_dispatch(li);
-	litest_assert_touch_sequence(li);
-
-	/* above rect */
-	litest_touch_sequence(finger, 0, x + 2, y - 65, x + 20, y - 40, 3);
-	litest_dispatch(li);
-	litest_assert_touch_sequence(li);
-
-	/* right of rect */
-	litest_touch_sequence(finger, 0, x + 80, y + 2, x + 20, y + 10, 3);
-	litest_dispatch(li);
-	litest_assert_touch_sequence(li);
-
-#if 0
-	/* This *should* work but the Cintiq test devices is <200mm
-	   high, so we can't test for anything below the tip */
-	x = 20;
-	y = 10;
-	litest_tablet_proximity_out(dev);
-	litest_timeout_tablet_proxout(li);
-	litest_tablet_motion(dev, x, y, axes);
-	litest_tablet_proximity_in(dev, x, y - 1, axes);
-	litest_drain_events(li);
-
-	/* below rect */
-	litest_touch_sequence(finger, 0, x + 2, y + 80, x + 20, y + 20, 30);
-	litest_dispatch(li);
-	litest_assert_touch_sequence(li);
-#endif
+	if (tilt_left) {
+		/* slightly right of tip */
+		litest_touch_sequence(finger, 0, x + 10, y + 2, x - 10, y + 20, 3);
+		litest_dispatch(li);
+		litest_assert_touch_sequence(li);
+	} else {
+		/* slightly left of tip */
+		litest_touch_sequence(finger, 0, x - 10, y + 2, x - 10, y + 20, 3);
+		litest_dispatch(li);
+		litest_assert_touch_sequence(li);
+	}
 
 	litest_device_destroy(finger);
 }
@@ -8232,7 +8219,9 @@ TEST_COLLECTION(tablet)
 	litest_add(touch_arbitration_remove_tablet, LITEST_TOUCH, LITEST_ANY);
 	litest_add(touch_arbitration_keep_ignoring, LITEST_TABLET, LITEST_ANY);
 	litest_add(touch_arbitration_late_touch_lift, LITEST_TABLET, LITEST_ANY);
-	litest_add(touch_arbitration_outside_rect, LITEST_TABLET | LITEST_DIRECT, LITEST_ANY);
+	litest_with_parameters(params, "tilt-left", 'b') {
+		litest_add_parametrized(touch_arbitration_outside_rect, LITEST_TABLET | LITEST_DIRECT, LITEST_ANY, params);
+	}
 	litest_add(touch_arbitration_remove_after, LITEST_TABLET | LITEST_DIRECT, LITEST_ANY);
 	litest_add(touch_arbitration_swap_device, LITEST_TABLET, LITEST_ANY);
 

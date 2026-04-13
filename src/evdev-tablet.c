@@ -1866,38 +1866,24 @@ tablet_calculate_arbitration_rect(struct tablet_dispatch *tablet)
 {
 	struct evdev_device *device = tablet->device;
 	struct phys_rect r = { 0 };
-	struct phys_coords mm;
+	const double maxdim = 600; /* 600mm covers all the way to the right/bottom */
 
-	mm = evdev_device_units_to_mm(device, &tablet->axes.point);
+	struct phys_coords mm = evdev_device_units_to_mm(device, &tablet->axes.point);
 
-	/* The rect we disable is 20mm left of the tip, 100mm north of the
-	 * tip, and 200x250mm large.
-	 * If the stylus is tilted left (tip further right than the eraser
-	 * end) assume left-handed mode.
-	 *
-	 * Obviously if we'd run out of the boundaries, we clip the rect
-	 * accordingly.
+	/* The rect we disable is 20mm left of the tip, covering that whole side of the
+	 * tablet. If the stylus is tilted left (tip further right than the eraser end)
+	 * assume left-handed mode.
 	 */
 	if (tablet->axes.tilt.x > 0) {
 		r.x = mm.x - 20;
-		r.w = 200;
+		r.w = maxdim;
 	} else {
-		r.x = mm.x + 20;
-		r.w = 200;
-		r.x -= r.w;
-	}
-
-	if (r.x < 0) {
-		r.w += r.x;
 		r.x = 0;
+		r.w = mm.x + 20;
 	}
 
-	r.y = mm.y - 100;
-	r.h = 250;
-	if (r.y < 0) {
-		r.h += r.y;
-		r.y = 0;
-	}
+	r.y = 0;
+	r.h = maxdim;
 
 	return r;
 }
