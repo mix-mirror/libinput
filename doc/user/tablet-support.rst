@@ -466,7 +466,21 @@ devices arbitration has to be done in userspace.
 
 libinput uses the **libinput_device_group** to decide on touch arbitration
 and automatically discards touch events whenever a tool is in proximity.
-The exact behavior is device-dependent.
+The exact behavior is device-dependent but typically comes in two forms: full
+tablet touch arbitration and partial arbitration.
+
+.. figure:: tablet-touch-arbitration.svg
+    :align: center
+
+    Partial touch arbitration during a pen interaction for left-handed
+    and right-handed pen tilt.
+
+Full arbitration simply disables touch on the device while the pen is in
+proximity. Partial touch arbitration disables the side of the tablet around the
+user's hand, starting slightly to the side of the pen tip. If the pen tilts
+to the left (pen held in the left hand), the rectangle is to the left of the
+pen tip, if the pen tilts to the right (pen held in the right hand) it is to
+the right of the pen tip.
 
 .. _tablet-area:
 

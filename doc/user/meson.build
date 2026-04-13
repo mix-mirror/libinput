@@ -131,6 +131,7 @@ src_rst = files(
 	'svg/tablet-intuos-modes.svg',
 	'svg/tablet-left-handed.svg',
 	'svg/tablet-out-of-bounds.svg',
+	'svg/tablet-touch-arbitration.svg',
 	'svg/tablet.svg',
 	'svg/tap-n-drag.svg',
 	'svg/thumb-detection.svg',
