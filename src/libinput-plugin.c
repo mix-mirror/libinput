@@ -726,6 +726,9 @@ plugin_has_mask(struct libinput_plugin *plugin, struct evdev_frame *frame)
 	size_t nevents;
 	struct evdev_event *events = evdev_frame_get_events(frame, &nevents);
 
+	if (nevents == 0)
+		return false;
+
 	/* nevents - 1 because we don't check the SYN_REPORT */
 	for (size_t i = 0; i < nevents - 1; i++) {
 		struct evdev_event *e = &events[i];
