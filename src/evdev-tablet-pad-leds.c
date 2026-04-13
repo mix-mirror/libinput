@@ -237,14 +237,11 @@ pad_led_group_add_toggle_button(struct pad_led_group *group,
 	return 0;
 }
 
-static inline bool
-pad_led_get_sysfs_base_path(struct evdev_device *device,
-			    char *path_out,
-			    size_t path_out_sz)
+static inline char *
+pad_led_get_sysfs_base_path(struct evdev_device *device)
 {
 	struct udev_device *parent, *udev_device;
 	const char *test_path;
-	int rc;
 
 	udev_device = device->udev_device;
 
@@ -253,24 +250,18 @@ pad_led_get_sysfs_base_path(struct evdev_device *device,
 	test_path =
 		udev_device_get_property_value(udev_device,
 					       "LIBINPUT_TEST_TABLET_PAD_SYSFS_PATH");
-	if (test_path) {
-		rc = snprintf(path_out, path_out_sz, "%s", test_path);
-		return rc != -1;
-	}
+	if (test_path)
+		return safe_strdup(test_path);
 
 	parent = udev_device_get_parent_with_subsystem_devtype(udev_device,
 							       "input",
 							       NULL);
 	if (!parent)
-		return false;
+		return NULL;
 
-	rc = snprintf(path_out,
-		      path_out_sz,
-		      "%s/%s::wacom-",
-		      udev_device_get_syspath(parent),
-		      udev_device_get_sysname(parent));
-
-	return rc != -1;
+	return strdup_printf("%s/%s::wacom-",
+			     udev_device_get_syspath(parent),
+			     udev_device_get_sysname(parent));
 }
 
 static int
@@ -288,11 +279,12 @@ pad_add_mode_group(struct pad_dispatch *pad,
 	struct libinput *li = pad_libinput_context(pad);
 	struct pad_led_group *group = NULL;
 	int rc = -ENOMEM;
-	char syspath[PATH_MAX];
+	_autofree_ char *syspath;
 
 	/* syspath is /sys/class/leds/input1234/input12345::wacom-" and
 	   only needs the group + mode appended */
-	if (!pad_led_get_sysfs_base_path(device, syspath, sizeof(syspath)))
+	syspath = pad_led_get_sysfs_base_path(device);
+	if (!syspath)
 		return -ENOMEM;
 
 	group = pad_group_new(pad, group_index, nmodes);
