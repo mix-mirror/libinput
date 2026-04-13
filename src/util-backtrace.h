@@ -65,12 +65,12 @@ backtrace_print(FILE *fp,
 	child = fork();
 
 	if (child == 0) {
-		char pid[8];
+		char pid[16];
 
 		close(pipefd[0]);
 		dup2(pipefd[1], STDOUT_FILENO);
 
-		sprintf(pid, "%d", parent);
+		snprintf(pid, sizeof(pid), "%d", parent);
 
 		execlp("gstack", "gstack", pid, NULL);
 		exit(errno);
