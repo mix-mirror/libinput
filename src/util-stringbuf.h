@@ -41,7 +41,7 @@ stringbuf_init(struct stringbuf *b)
 {
 	b->len = 0;
 	b->sz = 64;
-	b->data = calloc(1, b->sz);
+	b->data = zalloc(b->sz);
 }
 
 static inline bool
@@ -62,7 +62,7 @@ stringbuf_reset(struct stringbuf *b)
 static inline struct stringbuf *
 stringbuf_new(void)
 {
-	struct stringbuf *b = calloc(1, sizeof(*b));
+	struct stringbuf *b = zalloc(sizeof(*b));
 	stringbuf_init(b);
 	return b;
 }
