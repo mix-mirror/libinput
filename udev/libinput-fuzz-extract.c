@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "util-files.h"
 #include "util-macros.h"
 #include "util-prop-parsers.h"
 
@@ -77,7 +78,7 @@ handle_absfuzz(struct udev_device *device)
 	}
 
 out:
-	close(fd);
+	xclose(&fd);
 	libevdev_free(evdev);
 }
 

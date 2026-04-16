@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "util-files.h"
 #include "util-macros.h"
 
 static void
@@ -75,7 +76,7 @@ reset_absfuzz_to_zero(struct udev_device *device)
 	}
 
 out:
-	close(fd);
+	xclose(&fd);
 	libevdev_free(evdev);
 }
 
