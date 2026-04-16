@@ -1837,23 +1837,25 @@ tp_handle_state(struct tp_dispatch *tp, usec_t time)
 _unused_ static inline void
 tp_debug_touch_state(struct tp_dispatch *tp, struct evdev_device *device)
 {
-	char buf[1024] = { 0 };
+	_autostrvfree_ char **strv = NULL;
 	struct tp_touch *t;
 	size_t i = 0;
 
 	tp_for_each_touch(tp, t) {
 		if (i >= tp->nfingers_down)
 			break;
-		sprintf(&buf[strlen(buf)],
-			"slot %zd: %04d/%04d p%03d %s |",
-			i++,
-			t->point.x,
-			t->point.y,
-			t->pressure,
-			tp_touch_active(tp, t) ? "" : "inactive");
+		strv = strv_append_printf(strv,
+					  "slot %zd: %04d/%04d p%03d %s",
+					  i++,
+					  t->point.x,
+					  t->point.y,
+					  t->pressure,
+					  tp_touch_active(tp, t) ? "" : "inactive");
 	}
-	if (buf[0] != '\0')
+	if (strv) {
+		_autofree_ char *buf = strv_join(strv, " | ");
 		evdev_log_debug(device, "touch state: %s\n", buf);
+	}
 }
 
 static void
