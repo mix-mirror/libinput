@@ -297,8 +297,7 @@ main(int argc, char **argv)
 			}
 			break;
 		case OPT_NEVENTS:
-			nevents = atoi(optarg);
-			if (nevents == 0) {
+			if (!safe_atoi(optarg, &nevents) || nevents <= 0) {
 				usage();
 				return 1;
 			}
