@@ -168,7 +168,7 @@ lua_push_evdev_device(lua_State *L,
 	lua_device->bustype = libinput_device_get_id_bustype(device);
 	lua_device->vid = libinput_device_get_id_vendor(device);
 	lua_device->pid = libinput_device_get_id_product(device);
-	lua_device->name = strdup(libinput_device_get_name(device));
+	lua_device->name = safe_strdup(libinput_device_get_name(device));
 	lua_device->device_removed_refid = LUA_NOREF;
 	lua_device->frame_refid = LUA_NOREF;
 	list_init(&lua_device->udev_properties_list);

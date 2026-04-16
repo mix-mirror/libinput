@@ -115,7 +115,7 @@ libinput_plugin_new(struct libinput *libinput,
 	plugin->refcount = 1;
 	plugin->interface = interface;
 	plugin->user_data = user_data;
-	plugin->name = strdup(name);
+	plugin->name = safe_strdup(name);
 	list_init(&plugin->timers);
 
 	if (plugin->index >= 32) {
