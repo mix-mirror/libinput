@@ -74,10 +74,12 @@ rmdir_r(const char *dir)
 		_autofree_ char *path = strdup_printf("%s/%s", dir, entry->d_name);
 
 		struct stat st;
-		if (stat(path, &st) < 0)
+		if (lstat(path, &st) < 0)
 			return -errno;
 
-		if (S_ISDIR(st.st_mode))
+		if (S_ISLNK(st.st_mode))
+			rc = unlink(path) < 0 ? -errno : 0;
+		else if (S_ISDIR(st.st_mode))
 			rc = rmdir_r(path);
 		else
 			rc = unlink(path) < 0 ? -errno : 0;
