@@ -142,11 +142,11 @@ print_rel_wheel(struct context *ctx, unsigned int code, int value)
 static void
 print_bar(const char *header, double value, double normalized)
 {
-	char empty[termwidth];
+	char empty[256];
 	bool oob = false;
 	/* the bar is minimum 10 chars, otherwise 78 or whatever fits.
 	   32 is the manually-added up length of the prefix + [|] */
-	const int width = clamp(termwidth - 32, 10, 78);
+	const int width = clamp(termwidth - 32, 10, min(78, (int)sizeof(empty) - 1));
 	int left_pad, right_pad;
 
 	memset(empty, '-', sizeof empty);
@@ -259,8 +259,12 @@ handle_device_added(struct context *ctx, struct libinput_event *ev)
 	devnode = udev_device_get_devnode(udev_device);
 	if (devnode) {
 		int fd = open(devnode, O_RDONLY | O_NONBLOCK);
-		assert(fd != -1);
-		assert(libevdev_new_from_fd(fd, &ctx->evdev) == 0);
+		if (fd == -1)
+			return;
+		if (libevdev_new_from_fd(fd, &ctx->evdev) != 0) {
+			close(fd);
+			return;
+		}
 	}
 }
 
@@ -304,26 +308,30 @@ handle_libinput_events(struct context *ctx)
 			pev = libinput_event_get_tablet_pad_event(ev);
 			number = libinput_event_tablet_pad_get_button_number(pev);
 			state = libinput_event_tablet_pad_get_button_state(pev);
-			ctx->buttons_down[number] =
-				state == LIBINPUT_BUTTON_STATE_PRESSED ? 1 : 0;
+			if (number < ARRAY_LENGTH(ctx->buttons_down))
+				ctx->buttons_down[number] =
+					state == LIBINPUT_BUTTON_STATE_PRESSED ? 1 : 0;
 			break;
 		case LIBINPUT_EVENT_TABLET_PAD_RING:
 			pev = libinput_event_get_tablet_pad_event(ev);
 			number = libinput_event_tablet_pad_get_ring_number(pev);
 			value = libinput_event_tablet_pad_get_ring_position(pev);
-			ctx->ring[number] = value;
+			if (number < ARRAY_LENGTH(ctx->ring))
+				ctx->ring[number] = value;
 			break;
 		case LIBINPUT_EVENT_TABLET_PAD_STRIP:
 			pev = libinput_event_get_tablet_pad_event(ev);
 			number = libinput_event_tablet_pad_get_strip_number(pev);
 			value = libinput_event_tablet_pad_get_strip_position(pev);
-			ctx->strip[number] = value;
+			if (number < ARRAY_LENGTH(ctx->strip))
+				ctx->strip[number] = value;
 			break;
 		case LIBINPUT_EVENT_TABLET_PAD_DIAL: {
 			pev = libinput_event_get_tablet_pad_event(ev);
 			number = libinput_event_tablet_pad_get_dial_number(pev);
 			value = libinput_event_tablet_pad_get_dial_delta_v120(pev);
-			ctx->dial[number] = value;
+			if (number < ARRAY_LENGTH(ctx->dial))
+				ctx->dial[number] = value;
 			break;
 		}
 		case LIBINPUT_EVENT_TABLET_PAD_KEY: {
