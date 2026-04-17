@@ -12,7 +12,7 @@ one can be enabled at a time. As a general overview:
 - touchpad devices with physical buttons below the touchpad support edge and
   two-finger scrolling
 - touchpad devices without physical buttons (:ref:`ClickPads <clickpad_softbuttons>`)
-  support two-finger scrolling only
+  support two-finger scrolling and edge scrolling
 - pointing sticks provide on-button scrolling by default
 - mice and other pointing devices support on-button scrolling but it is not
   enabled by default
