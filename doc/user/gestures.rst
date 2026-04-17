@@ -254,7 +254,8 @@ towards an interaction, see :ref:`thumb_detection` and
 
 In the context of hold gestures, thumbs and palms are treated by libinput as
 if the finger was removed from the device. Where other non-thumb/non-palm
-fingers remain on the device, an **hold update** event is sent. Otherwise,
+fingers remain on the device, the current hold gesture is cancelled and a
+new **hold begin** event with the updated finger count is sent. Otherwise,
 the hold gesture terminates with a **hold cancel** event.
 
 Notably, libinput's thumb and palm detection is not a simple boolean per
