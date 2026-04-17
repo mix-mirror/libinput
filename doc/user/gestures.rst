@@ -108,14 +108,15 @@ Hold gestures have three potential logical states:
 For example, a user that puts one finger, then a second finger down and
 releases them later may trigger the following event sequence:
 
-=============  ============  ============
-Action         Event         Finger count
-=============  ============  ============
-Finger 1 down  <no event>
-Finger 2 down  **begin**     2
-Finger 2 up    **end**       2
+=============  ==============  ============
+Action         Event           Finger count
+=============  ==============  ============
+Finger 1 down  **begin**       1
+Finger 2 down  **cancel**      1
+\              **begin**       2
+Finger 2 up    **end**         2
 Finger 1 up    <no event>
-=============  ============  ============
+=============  ==============  ============
 
 A hold gesture may by be **cancelled**. This occurs
 when the hold gesture changes into some other interaction and should no
