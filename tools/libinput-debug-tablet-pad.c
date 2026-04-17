@@ -258,7 +258,7 @@ handle_device_added(struct context *ctx, struct libinput_event *ev)
 
 	devnode = udev_device_get_devnode(udev_device);
 	if (devnode) {
-		int fd = open(devnode, O_RDONLY | O_NONBLOCK);
+		int fd = open(devnode, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
 		if (fd == -1)
 			return;
 		if (libevdev_new_from_fd(fd, &ctx->evdev) != 0) {

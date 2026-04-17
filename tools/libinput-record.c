@@ -1695,7 +1695,7 @@ print_hid_report_descriptor(struct record_device *dev)
 	if (len <= 0)
 		return;
 
-	fd = open(syspath, O_RDONLY);
+	fd = open(syspath, O_RDONLY | O_CLOEXEC);
 	if (fd == -1)
 		return;
 
@@ -1926,7 +1926,7 @@ select_device(void)
 		char path[PATH_MAX];
 
 		snprintf(path, sizeof(path), "/dev/input/%s", entry->d_name);
-		_cleanup_(xclose) int fd = open(path, O_RDONLY);
+		_cleanup_(xclose) int fd = open(path, O_RDONLY | O_CLOEXEC);
 		if (fd < 0) {
 			if (errno == EACCES)
 				has_eaccess = true;
@@ -2395,7 +2395,7 @@ init_device(struct record_context *ctx, const char *path, bool grab)
 
 	list_init(&d->hidraw_devices);
 
-	_cleanup_(xclose) int fd = open(d->devnode, O_RDONLY | O_NONBLOCK);
+	_cleanup_(xclose) int fd = open(d->devnode, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
 	if (fd < 0) {
 		fprintf(stderr, "Failed to open device %s (%m)\n", d->devnode);
 		return false;
@@ -2514,7 +2514,7 @@ init_hidraw(struct record_context *ctx)
 				 sizeof(hidraw_node),
 				 "/dev/%s",
 				 entry->d_name);
-			fd = open(hidraw_node, O_RDONLY | O_NONBLOCK);
+			fd = open(hidraw_node, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
 			if (fd == -1)
 				continue;
 

@@ -1335,7 +1335,7 @@ register_evdev_device(struct window *w, struct libinput_device *dev)
 	ud = libinput_device_get_udev_device(dev);
 	device_node = udev_device_get_devnode(ud);
 
-	fd = open(device_node, O_RDONLY | O_NONBLOCK);
+	fd = open(device_node, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
 	if (fd == -1) {
 		msg("failed to open %s, evdev events unavailable\n", device_node);
 		goto out;
