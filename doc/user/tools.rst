@@ -269,7 +269,7 @@ alphanumeric key shows up as letter "a".
 The recording can be replayed with the ``libinput replay`` command: ::
 
      $ sudo libinput replay touchpad.yml
-     SynPS/2 Synaptics TouchPad: /dev/input/event19
+     /dev/input/event19: SynPS/2 Synaptics TouchPad
      Hit enter to start replaying
 
 
