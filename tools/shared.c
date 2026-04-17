@@ -297,7 +297,8 @@ tools_parse_option(int option, const char *optarg, struct tools_options *options
 	case OPT_SPEED:
 		if (!optarg)
 			return 1;
-		options->speed = atof(optarg);
+		if (!safe_atod(optarg, &options->speed))
+			return 1;
 		break;
 	case OPT_PROFILE:
 		if (!optarg)
