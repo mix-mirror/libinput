@@ -2033,6 +2033,8 @@ open_output_files(struct record_context *ctx, bool is_prefix)
 		if (d->fp)
 			continue;
 		d->fp = tmpfile();
+		if (!d->fp)
+			return false;
 	}
 
 	return true;
