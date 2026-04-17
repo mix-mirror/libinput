@@ -60,7 +60,7 @@ is unfortunately not visibly obvious.
 	  available.
 
 If fingers are down in the main area in addition to fingers in the
-left or right button area, those fingers are are ignored.
+left or right button area, those fingers are ignored.
 A release event always releases the buttons logically down, regardless of
 the current finger position
 
@@ -77,7 +77,7 @@ The movement of a finger can alter the button area behavior:
 - once a finger has moved out of the button area, it cannot move back in and
   trigger a right or middle button event
 - a finger moving within the software button area does not move the pointer
-- once a finger moves out out of the button area it will control the
+- once a finger moves out of the button area it will control the
   pointer (this only applies if there is no other finger down on the
   touchpad)
 

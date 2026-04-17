@@ -43,7 +43,7 @@ Thus, devices "Foo" and "Bar" both reference the same struct
 The effect of seat assignment
 ------------------------------------------------------------------------------
 
-A logical set is interpreted as a group of devices that usually belong to a
+A logical seat is interpreted as a group of devices that usually belong to a
 single user that interacts with a computer. Thus, the devices are
 semantically related. This means for devices within the same logical seat:
 

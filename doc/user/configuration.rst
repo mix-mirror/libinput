@@ -205,8 +205,8 @@ Tablet tool pressure range
 
 The pressure range on a :ref:`Tablet tool <tablet-tools>` can be reduced
 from the full available hardware range to a subset of that range. The effect
-of this is that the tablet will not register pressure below the given
-the given threshold is met, and will reach the maximum logical pressure
+of this is that the tablet will not register pressure until the given
+threshold is met, and will reach the maximum logical pressure
 before the maximum hardware-supported pressure is reached.
 
 See :ref:`tablet-pressure-range` for more info.

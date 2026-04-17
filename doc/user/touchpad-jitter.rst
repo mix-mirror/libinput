@@ -11,7 +11,7 @@ libinput has a mechanism called a **hysteresis** to avoid that jitter. When
 active, movement within the **hysteresis margin** is discarded. If the
 movement delta is larger than the margin, the movement is passed on as
 pointer movement. This is a simplified summary, developers should
-read the implementation of the hysteresis in ``src/evdev.c``.
+read the implementation of the hysteresis in ``src/evdev.h``.
 
 libinput uses the kernel ``fuzz`` value to determine the size of the
 hysteresis. Users should override this with a udev hwdb entry where the

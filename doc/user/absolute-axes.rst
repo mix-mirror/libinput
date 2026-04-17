@@ -110,7 +110,7 @@ The most common matrices are:
      .. math::
          \begin{pmatrix}
           -1 & 0 & 1 \\
-          1 & 0 & 0 \\
+          0 & 1 & 0 \\
           0 & 0 & 1
          \end{pmatrix}
 

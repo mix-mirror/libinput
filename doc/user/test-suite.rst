@@ -235,7 +235,7 @@ suites as:
 
 ::
 
-   $ meson test --no-suite=machine  # only run container-friendly tests
+   $ meson test --no-suite=hardware  # only run container-friendly tests
    $ meson test --suite=valgrind --setup=valgrind  # run all valgrind-compatible tests
    $ meson test --no-suite=root  # run all tests not requiring root
 

@@ -1932,7 +1932,7 @@ libinput_event_touch_get_base_event(struct libinput_event_touch *event);
  *
  * Gesture events are generated when a gesture is recognized on a touchpad.
  *
- * Gesture sequences always start with a LIBINPUT_EVENT_GESTURE_FOO_START
+ * Gesture sequences always start with a LIBINPUT_EVENT_GESTURE_FOO_BEGIN
  * event. All following gesture events will be of the
  * LIBINPUT_EVENT_GESTURE_FOO_UPDATE type until a
  * LIBINPUT_EVENT_GESTURE_FOO_END is generated which signals the end of the

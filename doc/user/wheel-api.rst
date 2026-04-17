@@ -45,7 +45,7 @@ Both events have their own set of APIs to access the data within:
 - ``LIBINPUT_EVENT_POINTER_SCROLL_WHEEL`` available since libinput 1.19.
 
   * ``libinput_event_pointer_get_scroll_value_v120()`` returns a value
-    normalized into the 0..120 range, see below. Any multiple of 120 should
+    normalized into multiples of 120, see below. Any multiple of 120 should
     be treated as one full wheel click.
 
 .. note:: Where possible, the ``libinput_event_pointer_get_axis_value()``,

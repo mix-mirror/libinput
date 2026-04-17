@@ -162,7 +162,7 @@ the value can be crafted manually:
 
 .. code-block:: lua
 
-   evdev_type = 0x3  -- EV_REL
+   evdev_type = 0x2  -- EV_REL
    evdev_code = 0x1  -- REL_Y
    evdev_usage = (evdev_type << 16) | evdev_code
 

@@ -64,7 +64,7 @@ MOUSE_DPI
 
 MOUSE_WHEEL_CLICK_ANGLE
     The angle in degrees for each click on a mouse wheel. See
-    **libinput_pointer_get_axis_source()** for details.
+    **libinput_event_pointer_get_axis_source()** for details.
 
 
 Below is an example udev rule to assign "seat1" to a device from vendor
@@ -94,7 +94,7 @@ type label does not guarantee that the device is initialized by libinput.
 If a device fails to meet the requirements for a device type (e.g. a keyboard
 labelled as touchpad) the device will not be available through libinput.
 
-Only one device type should be set per device at a type, though libinput can
+Only one device type should be set per device at a time, though libinput can
 handle some combinations for historical reasons.
 
 Below is an example udev rule  to remove an **ID_INPUT_TOUCHPAD** setting

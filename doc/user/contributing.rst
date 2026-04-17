@@ -144,10 +144,9 @@ This test suite can take test names etc. as arguments, have a look at
 :ref:`test-suite` for more info. There are a bunch of other tests that are
 run by the CI on merge requests, you can run those locally with ::
 
-  $> sudo ninja -C builddir check
+  $> sudo meson test -C builddir
 
-So it always pays to run that before submitting. This will also run the code
-through valgrind and pick up any memory leaks.
+So it always pays to run that before submitting.
 
 .. _contributing_submitting_code:
 

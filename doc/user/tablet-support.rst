@@ -58,7 +58,7 @@ event of type **LIBINPUT_EVENT_TABLET_TOOL_TIP**, and again when the tip
 ceases contact with the surface.
 
 Tablet tools may send button events; these are exclusively for extra buttons
-unrelated to the tip. A button event is independent of the tip and can while
+unrelated to the tip. A button event is independent of the tip and can occur while
 the tip is down or up.
 
 Some tablet tools' pressure detection is too sensitive, causing phantom
@@ -100,7 +100,7 @@ all pen-like tools to absolute mode.
 
 If a tool in relative mode must not use pointer acceleration, callers
 should use the absolute coordinates returned by
-**libinput_event_tablet_tool_get_x()** and libinput_event_tablet_tool_get_y()
+**libinput_event_tablet_tool_get_x()** and **libinput_event_tablet_tool_get_y()**
 and calculate the delta themselves. Callers that require exact physical
 distance should also use these functions to calculate delta movements.
 
@@ -357,7 +357,7 @@ tablet by 180 degrees to move the tablet pad button area to right side of
 the tablet.  When left-handed mode is enabled on a tablet device (see
 **libinput_device_config_left_handed_set()**) the tablet tool and tablet pad
 behavior changes. In left-handed mode, the tools' axes are adjusted
-so that the origin of each axis remains the logical north-east of
+so that the origin of each axis remains the logical north-west of
 the physical tablet. For example, the x and y axes are inverted and the
 positive x/y coordinates are down/right of the top-left corner of the tablet
 in its current orientation. On a tablet pad, the ring and strip are
@@ -401,7 +401,7 @@ caller to decide whether the mode only applies to buttons, rings and strips
 or only to rings and strips (this is the case with the Wacom OS X and
 Windows driver).
 
-The availability of modes on a touchpad usually depends on visual feedback
+The availability of modes on a tablet pad usually depends on visual feedback
 such as LEDs around the touch ring. If no visual feedback is available, only
 one mode may be available.
 
@@ -509,7 +509,7 @@ tip of the tool - inverting the tool brings the eraser into proximity.
 .. figure:: tablet-eraser-invert.svg
     :align: center
 
-    An pen-like tool used as pen and as eraser by inverting it
+    A pen-like tool used as pen and as eraser by inverting it
 
 Having an eraser as a separate tool is beneficial in many applications as the
 eraser tool can be assigned different functionality (colors, paint tools, etc.)
@@ -524,7 +524,7 @@ into proximity immediately after - as if the tool was physically inverted.
 .. figure:: tablet-eraser-button.svg
     :align: center
 
-    An pen-like tool used as pen and as eraser by pressing the eraser button
+    A pen-like tool used as pen and as eraser by pressing the eraser button
 
 Microsoft mandates this behavior (see
 `Windows Pen States <https://learn.microsoft.com/en-us/windows-hardware/design/component-guidelines/windows-pen-states>`_
@@ -541,4 +541,4 @@ is disabled, pressing that button will generate a normal tablet tool button
 event.
 
 This configuration is only available on pens with an eraser button, not on
-with an invert-type eraser.
+pens with an invert-type eraser.

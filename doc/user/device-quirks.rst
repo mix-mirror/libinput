@@ -23,7 +23,7 @@ the serial bus (PS/2) as internal keyboards: ::
 
      [Serial Keyboards]
      MatchUdevType=keyboard
-     MatchBus=serial
+     MatchBus=ps2
      AttrKeyboardIntegration=internal
 
 
@@ -130,7 +130,7 @@ Quirks starting with **Model*** triggers implementation-defined behaviour
 for this device not needed for any other device. Only the more
 general-purpose **Model*** flags are listed here.
 
-ModelALPSTouchpad, ModelAppleTouchpad, ModelWacomTouchpad, ModelChromebook
+ModelALPSSerialTouchpad, ModelAppleTouchpad, ModelWacomTouchpad, ModelChromebook
     Reserved for touchpads made by the respective vendors
 ModelTouchpadVisibleMarker
     Indicates the touchpad has a drawn-on visible marker between the software
@@ -162,9 +162,9 @@ ModelScrollOnMiddleClick
     Some mice can generate unwanted high-resolution scroll events when the wheel
     is pressed. Increases the scroll threshold required to start scrolling to
     avoid accidentally scrolling when middle clicking.
-AttrSizeHint=NxM, AttrResolutionHint=N
+AttrSizeHint=NxM, AttrResolutionHint=NxM
     Hints at the width x height of the device in mm, or the resolution
-    of the x/y axis in units/mm. These may only be used where they apply to
+    of the x and y axes in units/mm. These may only be used where they apply to
     a large proportion of matching devices. They should not be used for any
     specific device, override ``EVDEV_ABS_*`` instead, see
     :ref:`absolute_coordinate_ranges_fix`.

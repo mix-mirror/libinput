@@ -21,7 +21,7 @@ input devices (see :ref:`udev_device_type`) but that should not be used by
 libinput. It is recommended that devices that should not be handled as input
 devices at all unset the **ID_INPUT** and related properties instead. The
 **LIBINPUT_IGNORE_DEVICE** property signals that only libinput should
-ignore this property but other parts of the stack (if any) should continue
+ignore this device but other parts of the stack (if any) should continue
 treating this device normally.
 
 Below is an example udev rule  to assign **LIBINPUT_IGNORE_DEVICE** to the
