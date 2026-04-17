@@ -329,15 +329,12 @@ specific bug. For example, a touchpad may not work in response to keyboard
 events. To accurately reproduce this sequence, the timing between multiple
 devices must be correct and we need to record the events in one go.
 
-``libinput record`` has a ``--multiple`` argument to record multiple devices at
-once. Unlike the normal invocation, this one requires a number of arguments: ::
+``libinput record`` can record multiple devices by specifying them on the
+commandline. Recording multiple devices requires the ``--output-file``
+argument: ::
 
-     $ sudo libinput record --multiple --output-file=touchpad-bug.yml /dev/input/event17 /dev/input/event3
+     $ sudo libinput record --output-file=touchpad-bug.yml /dev/input/event17 /dev/input/event3
      recording to 'touchpad-bug.yml'
-
-As seen above, a user must specify ``--multiple`` and the ``--output-file``.
-Finally, all devices to be recorded must be specified on the commandline as
-well.
 
 Replaying events is the same as for a single recording: ::
 
