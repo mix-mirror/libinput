@@ -485,7 +485,7 @@ methods will be noops.
 
    Version 1 of the plugin API supports the following udev properties:
 
-   - ``ID_INPUT`` and all of ``ID_INPUT_*`` that denote the device type as assigned
+   - All of ``ID_INPUT_*`` that denote the device type as assigned
      by udev. This information is usually used by libinput to determine a
      device type. Note that for historical reasons these properties have
      varying rules - some properties may be mutually exclusive, others are
