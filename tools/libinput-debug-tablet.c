@@ -37,6 +37,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
+#include "util-files.h"
 #include "util-input-event.h"
 #include "util-macros.h"
 #include "util-strings.h"
@@ -298,8 +299,7 @@ handle_device_removed(struct context *ctx, struct libinput_event *ev)
 	libevdev_free(ctx->evdev);
 	ctx->evdev = NULL;
 
-	close(ctx->fds[1].fd);
-	ctx->fds[1].fd = -1;
+	xclose(&ctx->fds[1].fd);
 }
 
 static void

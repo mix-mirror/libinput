@@ -1721,7 +1721,7 @@ print_hid_report_descriptor(struct record_device *dev)
 	iprintf(dev->fp, I_NONE, "\n");
 	iprintf(dev->fp, I_DEVICE, "]\n");
 
-	close(fd);
+	xclose(&fd);
 }
 
 static void
@@ -2119,7 +2119,7 @@ destroy_source(struct record_context *ctx, struct source *source)
 {
 	list_remove(&source->link);
 	epoll_ctl(ctx->epoll_fd, EPOLL_CTL_DEL, source->fd, NULL);
-	close(source->fd);
+	xclose(&source->fd);
 	free(source);
 }
 
@@ -2379,7 +2379,7 @@ mainloop(struct record_context *ctx)
 	list_for_each_safe(source, &ctx->sources, link) {
 		destroy_source(ctx, source);
 	}
-	close(ctx->epoll_fd);
+	xclose(&ctx->epoll_fd);
 
 	return 0;
 }
@@ -2799,7 +2799,7 @@ out:
 		struct hidraw *hidraw;
 
 		list_for_each_safe(hidraw, &d->hidraw_devices, link) {
-			close(hidraw->fd);
+			xclose(&hidraw->fd);
 			list_remove(&hidraw->link);
 			free(hidraw->name);
 			free(hidraw);

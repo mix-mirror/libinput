@@ -40,6 +40,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "util-files.h"
 #include "util-list.h"
 #include "util-macros.h"
 #include "util-strings.h"
@@ -1358,7 +1359,7 @@ register_evdev_device(struct window *w, struct libinput_device *dev)
 		g_io_add_watch(c, G_IO_IN, handle_event_evdev, d->libinput_device);
 	fd = -1;
 out:
-	close(fd);
+	xclose(&fd);
 	udev_device_unref(ud);
 }
 
@@ -1376,7 +1377,7 @@ unregister_evdev_device(struct window *w, struct libinput_device *dev)
 		free(libinput_device_get_user_data(d->libinput_device));
 		libinput_device_unref(d->libinput_device);
 		libevdev_free(d->evdev);
-		close(d->fd);
+		xclose(&d->fd);
 		free(d);
 		w->evdev.last_device = 0;
 		break;
