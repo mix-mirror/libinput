@@ -1379,7 +1379,9 @@ print_system_header(FILE *fp)
 		char osrstr[256] = "unknown";
 
 		while (fgets(osrstr, sizeof(osrstr), osrelease)) {
-			osrstr[strlen(osrstr) - 1] = '\0'; /* linebreak */
+			size_t len = strlen(osrstr);
+			if (len > 0 && osrstr[len - 1] == '\n')
+				osrstr[len - 1] = '\0'; /* linebreak */
 
 			if (!distro && strstartswith(osrstr, "ID="))
 				distro = strstrip(&osrstr[3], "\"'");
