@@ -282,6 +282,7 @@ safe_atod(const char *str, double *val)
 		case '+':
 		case '-':
 		case '.':
+		case 'e':
 			break;
 		default:
 			return false;
