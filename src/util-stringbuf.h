@@ -53,8 +53,7 @@ stringbuf_is_empty(struct stringbuf *b)
 static inline void
 stringbuf_reset(struct stringbuf *b)
 {
-	free(b->data);
-	b->data = NULL;
+	free_clear(&b->data);
 	b->sz = 0;
 	b->len = 0;
 }

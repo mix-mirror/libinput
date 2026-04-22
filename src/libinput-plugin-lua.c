@@ -375,8 +375,7 @@ remove_device(struct libinput_lua_plugin *plugin, EvdevDevice *evdev)
 	list_for_each_safe(prop, &evdev->udev_properties_list, link) {
 		udev_property_destroy(prop);
 	}
-	free(evdev->name);
-	evdev->name = NULL;
+	free_clear(&evdev->name);
 	evdev->device = libinput_device_unref(evdev->device);
 
 	/* This device no longer exists but our lua code may have a

@@ -36,6 +36,7 @@
 #include <stdlib.h>
 
 #include "util-macros.h"
+#include "util-mem.h"
 
 #define bit(x_) (1UL << (x_))
 #define NBITS(b) (b * 8)
@@ -281,8 +282,7 @@ infmask_new(void)
 
 _nonnull_(1) static inline void infmask_reset(infmask_t *mask)
 {
-	free(mask->mask);
-	mask->mask = NULL;
+	free_clear(&mask->mask);
 	mask->nmasks = 0;
 }
 

@@ -186,3 +186,14 @@ steal_fd(int *fd)
 	*fd = -1;
 	return copy;
 }
+
+/**
+ * Frees the pointer content and resets the data to NULL.
+ */
+#define free_clear(ptr_)                  \
+	do {                              \
+		typeof((ptr_)) _pp = (ptr_);  \
+		typeof(*(ptr_)) _p = *_pp;    \
+		*_pp = NULL;                  \
+		free(_p);                     \
+	} while(0)

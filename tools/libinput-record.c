@@ -2372,8 +2372,7 @@ mainloop(struct record_context *ctx)
 				}
 			}
 		}
-		free(ctx->output_file.name_with_suffix);
-		ctx->output_file.name_with_suffix = NULL;
+		free_clear(&ctx->output_file.name_with_suffix);
 	} while (autorestart && !ctx->stop);
 
 	sigprocmask(SIG_UNBLOCK, &mask, NULL);
