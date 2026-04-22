@@ -211,15 +211,22 @@ options = {
         "left-handed",
         "dwt",
         "dwtp",
+        "scroll-button-lock",
+        "plugins",
     ],
     # options with distinct values
     "enums": {
         "set-click-method": ["none", "clickfinger", "buttonareas"],
         "set-scroll-method": ["none", "twofinger", "edge", "button"],
-        "set-profile": ["adaptive", "flat"],
+        "set-profile": ["adaptive", "flat", "custom"],
         "set-tap-map": ["lrm", "lmr"],
         "set-clickfinger-map": ["lrm", "lmr"],
         "enable-drag-lock": ["sticky", "timeout"],
+        "set-sendevents": ["disabled", "enabled", "disabled-on-external-mouse"],
+        "enable-3fg-drag": ["3fg", "4fg", "disabled"],
+        "set-eraser-button-mode": ["default", "button"],
+        "set-eraser-button-button": ["BTN_STYLUS", "BTN_STYLUS2", "BTN_STYLUS3"],
+        "set-custom-type": ["fallback", "motion", "scroll"],
     },
     # options with a range (and increment)
     "ranges": {
@@ -270,12 +277,68 @@ def test_apply_to(libinput_debug_tool):
     libinput_debug_tool.run_command_success(["--apply-to", "any"])
 
 
+def test_set_scroll_button(libinput_debug_tool):
+    libinput_debug_tool.run_command_missing_arg(["--set-scroll-button"])
+    libinput_debug_tool.run_command_success(["--set-scroll-button", "BTN_LEFT"])
+    libinput_debug_tool.run_command_success(["--set-scroll-button=BTN_RIGHT"])
+
+
+def test_set_custom_points(libinput_debug_tool):
+    libinput_debug_tool.run_command_missing_arg(["--set-custom-points"])
+    libinput_debug_tool.run_command_success(["--set-custom-points", "0.0;1.0"])
+    libinput_debug_tool.run_command_success(["--set-custom-points=0.0;0.5;1.0"])
+
+
+def test_set_custom_step(libinput_debug_tool):
+    libinput_debug_tool.run_command_missing_arg(["--set-custom-step"])
+    libinput_debug_tool.run_command_success(["--set-custom-step", "0.5"])
+    libinput_debug_tool.run_command_success(["--set-custom-step=1.0"])
+
+
+def test_set_pressure_range(libinput_debug_tool):
+    libinput_debug_tool.run_command_missing_arg(["--set-pressure-range"])
+    libinput_debug_tool.run_command_success(["--set-pressure-range", "0.1:0.9"])
+    libinput_debug_tool.run_command_success(["--set-pressure-range=0.2:0.8"])
+
+
+def test_set_calibration(libinput_debug_tool):
+    libinput_debug_tool.run_command_missing_arg(["--set-calibration"])
+    libinput_debug_tool.run_command_success(
+        ["--set-calibration", "1.0 0.0 0.0 0.0 1.0 0.0"]
+    )
+
+
+def test_set_area(libinput_debug_tool):
+    libinput_debug_tool.run_command_missing_arg(["--set-area"])
+    libinput_debug_tool.run_command_success(["--set-area", "0.0/0.0 1.0/1.0"])
+
+
+def test_set_plugin_path(libinput_debug_tool):
+    libinput_debug_tool.run_command_missing_arg(["--set-plugin-path"])
+    libinput_debug_tool.run_command_success(["--set-plugin-path", "/usr/lib/libinput"])
+    libinput_debug_tool.run_command_success(
+        ["--set-plugin-path=/usr/lib/libinput:/usr/local/lib/libinput"]
+    )
+
+
 @pytest.mark.parametrize(
     "args",
     [["--verbose"], ["--quiet"], ["--verbose", "--quiet"], ["--quiet", "--verbose"]],
 )
 def test_debug_events_verbose_quiet(libinput_debug_events, args):
     libinput_debug_events.run_command_success(args)
+
+
+def test_debug_events_compress_motion_events(libinput_debug_events):
+    libinput_debug_events.run_command_success(["--compress-motion-events"])
+
+
+def test_debug_events_grab(libinput_debug_events):
+    libinput_debug_events.run_command_success(["--grab"])
+
+
+def test_debug_gui_grab(libinput_debug_gui):
+    libinput_debug_gui.run_command_success(["--grab"])
 
 
 @pytest.mark.parametrize("arg", ["--banana", "--foo", "--version"])
@@ -312,7 +375,7 @@ def test_libinput_debug_gui_verbose(libinput_debug_gui):
 
 
 @pytest.mark.parametrize(
-    "arg", ["--help", "--show-keycodes", "--with-libinput", "--with-hidraw"]
+    "arg", ["--help", "--show-keycodes", "--with-libinput", "--with-hidraw", "--grab"]
 )
 def test_libinput_record_args(libinput_record, arg):
     libinput_record.run_command_success([arg])
