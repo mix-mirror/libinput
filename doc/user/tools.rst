@@ -297,10 +297,11 @@ the event log is kept as short as possible.
 
 For bugs that are difficult to reproduce use
 ``libinput record --autorestart=2 --output-file=recording.yml``.
-All events will be recorded to a file named
-``recording.yml.<current-date-and-time>`` and whenever the device does not
-send events for 2 seconds, a new file is created. This helps to keep
-individual recordings short.
+The tool will wait for device activity before creating an output file.
+Once events are received, they are recorded to a file named
+``recording.yml.<current-date-and-time>``. Whenever the device does not
+send events for 2 seconds, the current file is closed and a new file is
+created once the device sends events again.
 
 To use the ``--autorestart`` option correctly:
 

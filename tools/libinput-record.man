@@ -42,8 +42,10 @@ nodes may be provided on the commandline.
 .B \-\-autorestart=s
 Terminate the current recording after
 .I s
-seconds of device inactivity. If
-\fB\-\-output-file\fR is not specified, it defaults to
+seconds of device inactivity. The output file is not created until
+the first event is received. This avoids creating empty files during
+idle periods.
+If \fB\-\-output-file\fR is not specified, it defaults to
 \fBlibinput-recording.yml\fR. The output filename is used as prefix,
 suffixed with the date and time of the recording. The timeout must be
 greater than 0.

@@ -2148,19 +2148,41 @@ hidraw_dispatch(struct record_context *ctx, int fd, void *data)
 }
 
 static int
-dispatch_sources(struct record_context *ctx)
+wait_for_sources(struct record_context *ctx,
+		 struct epoll_event *ep,
+		 int max_events,
+		 int timeout_ms)
 {
-	struct source *source;
-	struct epoll_event ep[64];
-	int i, count;
-	int timeout = usec_to_millis(ctx->timeout);
-
-	count = epoll_wait(ctx->epoll_fd,
-			   ep,
-			   ARRAY_LENGTH(ep),
-			   timeout > 0 ? timeout : -1);
+	int count = epoll_wait(ctx->epoll_fd, ep, max_events, timeout_ms);
 	if (count < 0)
 		return -errno;
+
+	return count;
+}
+
+static void
+dispatch_ready_sources(struct record_context *ctx, struct epoll_event *ep, int count)
+{
+
+	for (int i = 0; i < count; ++i) {
+		struct source *source = ep[i].data.ptr;
+		if (source->fd == -1)
+			continue;
+
+		source->dispatch(ctx, source->fd, source->user_data);
+	}
+}
+
+static int
+dispatch_sources(struct record_context *ctx)
+{
+	struct epoll_event ep[64];
+	int timeout = usec_to_millis(ctx->timeout);
+
+	int count =
+		wait_for_sources(ctx, ep, ARRAY_LENGTH(ep), timeout > 0 ? timeout : -1);
+	if (count < 0)
+		return count;
 
 	if (count > 0) {
 		usec_t now = usec_from_now();
@@ -2171,13 +2193,7 @@ dispatch_sources(struct record_context *ctx)
 		}
 	}
 
-	for (i = 0; i < count; ++i) {
-		source = ep[i].data.ptr;
-		if (source->fd == -1)
-			continue;
-
-		source->dispatch(ctx, source->fd, source->user_data);
-	}
+	dispatch_ready_sources(ctx, ep, count);
 
 	return count;
 }
@@ -2235,6 +2251,34 @@ mainloop(struct record_context *ctx)
 	do {
 		struct record_device *d;
 
+		struct epoll_event ep[64] = { 0 };
+		int count = 0;
+
+		if (autorestart) {
+			fprintf(stderr,
+				"%sWaiting for events...\n",
+				isatty(STDERR_FILENO) ? "" : "# ");
+
+			/* Don't create the output file until we have events */
+			count = wait_for_sources(ctx, ep, ARRAY_LENGTH(ep), -1);
+			if (count < 0) {
+				fprintf(stderr, "Error: %s\n", strerror(-count));
+				ctx->stop = true;
+				break;
+			}
+
+			bool has_event_source = false;
+			for (int i = 0; i < count; i++) {
+				struct source *s = ep[i].data.ptr;
+				if (s->dispatch != signalfd_dispatch)
+					has_event_source = true;
+			}
+			if (!has_event_source) {
+				dispatch_ready_sources(ctx, ep, count);
+				break;
+			}
+		}
+
 		if (!open_output_files(ctx, autorestart)) {
 			fprintf(stderr,
 				"Failed to open '%s'\n",
@@ -2257,8 +2301,6 @@ mainloop(struct record_context *ctx)
 
 		iprintf(ctx->first_device->fp, I_TOPLEVEL, "devices:\n");
 
-		/* we only print the first device's description, the
-		 * rest is assembled after CTRL+C */
 		list_for_each(d, &ctx->devices, link) {
 			print_device_description(d);
 			iprintf(d->fp, I_DEVICE, "events:\n");
@@ -2270,6 +2312,15 @@ mainloop(struct record_context *ctx)
 		if (ctx->libinput) {
 			libinput_dispatch(ctx->libinput);
 			handle_libinput_events(ctx, ctx->first_device, true);
+		}
+
+		if (autorestart) {
+			/* Dispatch the events that woke us up from
+			 * the idle wait */
+			dispatch_ready_sources(ctx, ep, count);
+
+			if (ctx->first_device->fp != stdout)
+				print_progress_bar();
 		}
 
 		while (true) {
@@ -2285,9 +2336,7 @@ mainloop(struct record_context *ctx)
 				break;
 
 			if (rc == 0) {
-				fprintf(stderr,
-					" ... timeout%s\n",
-					ctx->had_events ? "" : " (file is empty)");
+				fprintf(stderr, " ... timeout\n");
 				break;
 			}
 
@@ -2325,17 +2374,7 @@ mainloop(struct record_context *ctx)
 			d->fp = NULL;
 		}
 
-		/* If we didn't have events, delete the file. */
 		if (!isatty(fileno(ctx->first_device->fp))) {
-			struct record_device *d;
-
-			if (!ctx->had_events && ctx->output_file.name_with_suffix) {
-				fprintf(stderr,
-					"No events recorded, deleting '%s'\n",
-					ctx->output_file.name_with_suffix);
-				unlink(ctx->output_file.name_with_suffix);
-			}
-
 			list_for_each(d, &ctx->devices, link) {
 				if (d->fp && d->fp != stdout) {
 					fclose(d->fp);
