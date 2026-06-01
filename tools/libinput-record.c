@@ -1517,7 +1517,8 @@ print_description(FILE *fp, struct libevdev *dev)
 		break;
 	}
 
-	iprintf(fp, I_EVDEV, "# Name: %s\n", libevdev_get_name(dev));
+	_autofree_ char *name = str_sanitize(libevdev_get_name(dev));
+	iprintf(fp, I_EVDEV, "# Name: %s\n", name ? name : "");
 	iprintf(fp,
 		I_EVDEV,
 		"# ID: bus 0x%04x%svendor 0x%04x product 0x%04x version 0x%04x\n",
@@ -1568,7 +1569,8 @@ print_description(FILE *fp, struct libevdev *dev)
 static void
 print_bits_info(FILE *fp, struct libevdev *dev)
 {
-	iprintf(fp, I_EVDEV, "name: \"%s\"\n", libevdev_get_name(dev));
+	_autofree_ char *name = str_sanitize(libevdev_get_name(dev));
+	iprintf(fp, I_EVDEV, "name: \"%s\"\n", name ? name : "");
 	iprintf(fp,
 		I_EVDEV,
 		"id: [%d, %d, %d, %d]\n",
@@ -1934,7 +1936,8 @@ select_device(void)
 		if (rc != 0)
 			continue;
 
-		fprintf(stderr, "%s%s:	%s\n", prefix, path, libevdev_get_name(device));
+		_autofree_ char *name = str_sanitize(libevdev_get_name(device));
+		fprintf(stderr, "%s%s:	%s\n", prefix, path, name ? name : "");
 		libevdev_free(device);
 		available_devices++;
 	}
