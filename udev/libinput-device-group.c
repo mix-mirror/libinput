@@ -107,7 +107,8 @@ wacom_handle_ekr(struct udev_device *device,
 
 	udev_list_entry_foreach(entry, udev_enumerate_get_list_entry(e)) {
 		struct udev_device *d;
-		const char *path, *phys;
+		_autofree_ char *phys = NULL;
+		const char *path;
 		const char *pidstr, *vidstr;
 		int pid, vid, dist;
 
@@ -122,7 +123,7 @@ wacom_handle_ekr(struct udev_device *device,
 
 		vidstr = udev_device_get_property_value(d, "ID_VENDOR_ID");
 		pidstr = udev_device_get_property_value(d, "ID_MODEL_ID");
-		phys = udev_device_get_sysattr_value(d, "phys");
+		phys = str_sanitize(udev_device_get_sysattr_value(d, "phys"));
 
 		if (vidstr && pidstr && phys && safe_atoi_base(vidstr, &vid, 16) &&
 		    safe_atoi_base(pidstr, &pid, 16) && vid == VENDOR_ID_WACOM &&
@@ -134,7 +135,7 @@ wacom_handle_ekr(struct udev_device *device,
 				best_dist = dist;
 
 				free(*phys_attr);
-				*phys_attr = safe_strdup(phys);
+				*phys_attr = steal(&phys);
 			}
 		}
 
@@ -151,7 +152,8 @@ main(int argc, char **argv)
 	int rc = 1;
 	struct udev *udev = NULL;
 	struct udev_device *device = NULL;
-	const char *syspath, *phys = NULL;
+	_autofree_ char *phys = NULL;
+	const char *syspath = NULL;
 	const char *product;
 	int bustype, vendor_id, product_id, version;
 	char group[1024];
@@ -175,8 +177,7 @@ main(int argc, char **argv)
 	 * bit and use the remainder as device group identifier */
 	while (device != NULL) {
 		struct udev_device *parent;
-
-		phys = udev_device_get_sysattr_value(device, "phys");
+		phys = str_sanitize(udev_device_get_sysattr_value(device, "phys"));
 		if (phys)
 			break;
 
