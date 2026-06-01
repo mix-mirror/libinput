@@ -545,7 +545,10 @@ trunkname(const char *filename);
 
 /**
  * Return a copy of str with all % converted to %% to make the string
- * acceptable as printf format.
+ * acceptable as printf format, and all non-NUL control characters
+ * (bytes 0x01-0x1f, 0x7f) replaced with '?' to prevent terminal
+ * escape sequence injection. NUL bytes are excluded implicitly
+ * because the string is null-terminated.
  */
 static inline char *
 str_sanitize(const char *str)
@@ -553,19 +556,34 @@ str_sanitize(const char *str)
 	if (!str)
 		return NULL;
 
-	if (!strchr(str, '%'))
-		return strdup(str);
-
 	size_t slen = strlen(str);
 	slen = min(slen, 512);
+
+	bool needs_sanitization = false;
+	for (size_t i = 0; i < slen; i++) {
+		unsigned char c = str[i];
+		if (c == '%' || c < 0x20 || c == 0x7f) {
+			needs_sanitization = true;
+			break;
+		}
+	}
+	if (!needs_sanitization)
+		return strdup(str);
+
 	char *sanitized = zalloc(2 * slen + 1);
 	const char *src = str;
 	char *dst = sanitized;
 
 	for (size_t i = 0; i < slen; i++) {
-		if (*src == '%')
+		unsigned char c = *src++;
+		if (c == '%') {
 			*dst++ = '%';
-		*dst++ = *src++;
+			*dst++ = '%';
+		} else if (c < 0x20 || c == 0x7f) {
+			*dst++ = '?';
+		} else {
+			*dst++ = c;
+		}
 	}
 	*dst = '\0';
 

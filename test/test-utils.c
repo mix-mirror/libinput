@@ -2201,6 +2201,16 @@ START_TEST(strsanitize_test)
 		{ "x %", "x %%" },
 		{ "%sx", "%%sx" },
 		{ "%s%s", "%%s%%s" },
+		{ "\t", "?" },
+		{ "\n", "?" },
+		{ "\r", "?" },
+		{ "\x1b[31m", "?[31m" },
+		{ "foo\tbar", "foo?bar" },
+		{ "foo\nbar", "foo?bar" },
+		{ "\x01\x1f\x7f", "???" },
+		{ "clean", "clean" },
+		{ "a\x1b[0mb", "a?[0mb" },
+		{ "%\n", "%%?" },
 		{ NULL, NULL },
 	};
 	/* clang-format on */
