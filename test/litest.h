@@ -40,6 +40,8 @@
 #include "litest-runner.h"
 #include "quirks.h"
 
+DEFINE_DESTROY_CLEANUP_FUNC(libevdev_uinput);
+
 #define START_TEST(func_)  \
    static enum litest_runner_result func_(const struct litest_runner_test_env *test_env) { \
 	int _i _unused_ = test_env->rangeval;
