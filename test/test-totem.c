@@ -556,6 +556,57 @@ START_TEST(totem_arbitration_outside_rect)
 }
 END_TEST
 
+START_TEST(totem_touch_size_missing_resolution)
+{
+	struct libinput_device *device;
+	/* Match the Dell Canvas Totem quirk: vendor=0x2575, product=0x0204,
+	 * name matching "*System Multi Axis", bus=USB */
+	struct input_id id = {
+		.bustype = 0x3,
+		.vendor = 0x2575,
+		.product = 0x0204,
+	};
+	struct input_absinfo absinfo[] = {
+		{ ABS_MT_SLOT, 0, 4, 0, 0, 0 },
+		{ ABS_MT_TOUCH_MAJOR, 0, 32767, 0, 0, 10 },
+		{ ABS_MT_TOUCH_MINOR, 0, 32767, 0, 0, 0 }, /* resolution missing */
+		{ ABS_MT_ORIENTATION, -89, 89, 0, 0, 0 },
+		{ ABS_MT_POSITION_X, 0, 32767, 0, 0, 55 },
+		{ ABS_MT_POSITION_Y, 0, 32767, 0, 0, 98 },
+		{ ABS_MT_TOOL_TYPE, 9, 10, 0, 0, 0 },
+		{ ABS_MT_TRACKING_ID, 0, 65535, 0, 0, 0 },
+		{ -1, -1, -1, -1, -1, -1 },
+	};
+	/* clang-format off */
+	int events[] = {
+		EV_KEY, BTN_0,
+		INPUT_PROP_MAX, INPUT_PROP_DIRECT,
+		-1, -1,
+	};
+	/* clang-format on */
+
+	_destroy_(libevdev_uinput) *uinput =
+		litest_create_uinput_device_from_description(
+			"CoolTouch System Multi Axis",
+			&id,
+			absinfo,
+			events);
+	_litest_context_destroy_ struct libinput *li = litest_create_context();
+	litest_disable_log_handler(li);
+	device = libinput_path_add_device(li, libevdev_uinput_get_devnode(uinput));
+	litest_restore_log_handler(li);
+
+	/* The device matches the Dell Canvas Totem quirk but has
+	 * ABS_MT_TOUCH_MINOR resolution missing. The totem dispatch
+	 * should reject it, so it must not be recognized as a tablet
+	 * tool device. */
+	if (device)
+		litest_assert(!libinput_device_has_capability(
+			device,
+			LIBINPUT_DEVICE_CAP_TABLET_TOOL));
+}
+END_TEST
+
 TEST_COLLECTION(totem)
 {
 	/* clang-format off */
@@ -571,6 +622,7 @@ TEST_COLLECTION(totem)
 	litest_add(totem_button, LITEST_TOTEM, LITEST_ANY);
 	litest_add(totem_button_down_on_init, LITEST_TOTEM, LITEST_ANY);
 	litest_add_no_device(totem_button_up_on_delete);
+	litest_add_no_device(totem_touch_size_missing_resolution);
 
 	litest_add(totem_arbitration_below, LITEST_TOTEM, LITEST_ANY);
 	litest_add(totem_arbitration_during, LITEST_TOTEM, LITEST_ANY);

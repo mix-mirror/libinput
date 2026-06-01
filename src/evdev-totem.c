@@ -753,7 +753,7 @@ totem_reject_device(struct evdev_device *device)
 		libevdev_get_abs_maximum(evdev, ABS_MT_TOOL_TYPE) >= MT_TOOL_DIAL;
 	has_size = evdev_device_get_size(device, &w, &h) == 0;
 	has_touch_size =
-		libevdev_get_abs_resolution(device->evdev, ABS_MT_TOUCH_MAJOR) > 0 ||
+		libevdev_get_abs_resolution(device->evdev, ABS_MT_TOUCH_MAJOR) > 0 &&
 		libevdev_get_abs_resolution(device->evdev, ABS_MT_TOUCH_MINOR) > 0;
 
 	if (has_xy && has_slot && has_tool_dial && has_size && has_touch_size)
