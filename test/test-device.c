@@ -1656,6 +1656,77 @@ START_TEST(device_button_down_remove)
 }
 END_TEST
 
+enum extreme_axis_range_idx {
+	EXTREME_RANGE_0_TO_INT32MAX,
+	EXTREME_RANGE_INT32MIN_TO_0,
+	EXTREME_RANGE_NEGHALF_TO_POSHALF,
+};
+
+START_TEST(abs_device_extreme_axis_range)
+{
+	struct libevdev_uinput *uinput;
+	struct libinput_device *device;
+	int idx = litest_test_param_get_i32(test_env->params, "range");
+	/* All ranges exceed INT32_MAX/2, device should be rejected */
+	const struct {
+		int32_t min, max;
+	} ranges[] = {
+		[EXTREME_RANGE_0_TO_INT32MAX] = { 0, INT32_MAX },
+		[EXTREME_RANGE_INT32MIN_TO_0] = { INT32_MIN, 0 },
+		[EXTREME_RANGE_NEGHALF_TO_POSHALF] = { -(INT32_MAX / 2),
+						       INT32_MAX / 2 },
+	};
+	struct input_absinfo absinfo[] = {
+		{ ABS_X, ranges[idx].min, ranges[idx].max, 0, 0, 0 },
+		{ ABS_Y, 0, 1000, 0, 0, 0 },
+		{ -1, -1, -1, -1, -1, -1 },
+	};
+
+	_litest_context_destroy_ struct libinput *li = litest_create_context();
+	litest_disable_log_handler(li);
+	/* clang-format off */
+	uinput = litest_create_uinput_abs_device("test device", NULL,
+						 absinfo,
+						 EV_KEY, BTN_LEFT,
+						 EV_KEY, BTN_RIGHT,
+						 -1);
+	/* clang-format on */
+	device = libinput_path_add_device(li, libevdev_uinput_get_devnode(uinput));
+	litest_restore_log_handler(li);
+	litest_assert_ptr_null(device);
+
+	libevdev_uinput_destroy(uinput);
+}
+END_TEST
+
+START_TEST(abs_device_negative_resolution)
+{
+	struct libevdev_uinput *uinput;
+	struct libinput_device *device;
+	struct input_absinfo absinfo[] = {
+		{ ABS_X, 0, 1000, 0, 0, -1 }, /* negative resolution */
+		{ ABS_Y, 0, 1000, 0, 0, -1 }, /* negative resolution */
+		{ -1, -1, -1, -1, -1, -1 },
+	};
+
+	_litest_context_destroy_ struct libinput *li = litest_create_context();
+	litest_disable_log_handler(li);
+	/* clang-format off */
+	uinput = litest_create_uinput_abs_device("test device", NULL,
+						 absinfo,
+						 EV_KEY, BTN_LEFT,
+						 EV_KEY, BTN_RIGHT,
+						 -1);
+	/* clang-format on */
+	device = libinput_path_add_device(li, libevdev_uinput_get_devnode(uinput));
+	litest_restore_log_handler(li);
+	/* Device should be rejected */
+	litest_assert_ptr_null(device);
+
+	libevdev_uinput_destroy(uinput);
+}
+END_TEST
+
 TEST_COLLECTION(device)
 {
 	/* clang-format off */
@@ -1713,6 +1784,13 @@ TEST_COLLECTION(device)
 
 	litest_add(device_wheel_only, LITEST_WHEEL, LITEST_RELATIVE|LITEST_ABSOLUTE|LITEST_TABLET);
 	litest_add_no_device(device_accelerometer);
+	litest_with_parameters(params, "range", 'I', 3,
+			       litest_named_i32(EXTREME_RANGE_0_TO_INT32MAX, "0-to-INT32MAX"),
+			       litest_named_i32(EXTREME_RANGE_INT32MIN_TO_0, "INT32MIN-to-0"),
+			       litest_named_i32(EXTREME_RANGE_NEGHALF_TO_POSHALF, "-INT32MAX/2-to-INT32MAX/2")) {
+		litest_add_parametrized_no_device(abs_device_extreme_axis_range, params);
+	}
+	litest_add_no_device(abs_device_negative_resolution);
 
 	litest_add(device_udev_tag_wacom_tablet, LITEST_TABLET, LITEST_TOTEM);
 

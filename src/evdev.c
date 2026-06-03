@@ -1671,6 +1671,16 @@ evdev_check_min_max(struct evdev_device *device, unsigned int code)
 		return true;
 
 	absinfo = libevdev_get_abs_info(evdev, code);
+
+	if (((uint64_t)absinfo->maximum - (uint64_t)absinfo->minimum) > INT32_MAX / 2) {
+		evdev_log_bug_kernel(device,
+				     "kernel axis range [%d, %d] on %s too extreme\n",
+				     absinfo->minimum,
+				     absinfo->maximum,
+				     libevdev_event_code_get_name(EV_ABS, code));
+		return false;
+	}
+
 	if (absinfo->minimum == absinfo->maximum) {
 		/* Some devices have a sort-of legitimate min/max of 0 for
 		 * ABS_MISC and above (e.g. Roccat Kone XTD). Don't ignore
@@ -1690,6 +1700,18 @@ evdev_check_min_max(struct evdev_device *device, unsigned int code)
 				libevdev_event_code_get_name(EV_ABS, code));
 			return false;
 		}
+	} else if (absinfo->minimum > absinfo->maximum) {
+		evdev_log_bug_kernel(device,
+				     "device has min > max on %s\n",
+				     libevdev_event_code_get_name(EV_ABS, code));
+		return false;
+	}
+
+	if (absinfo->resolution < 0) {
+		evdev_log_bug_kernel(device,
+				     "kernel resolution is negative on %s\n",
+				     libevdev_event_code_get_name(EV_ABS, code));
+		return false;
 	}
 
 	return true;
