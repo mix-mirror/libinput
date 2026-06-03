@@ -1113,6 +1113,54 @@ START_TEST(pad_keys)
 }
 END_TEST
 
+START_TEST(pad_strip_wacom_degenerate_max)
+{
+	struct libinput_event *ev;
+	struct libinput_event_tablet_pad *pev;
+	double pos;
+
+	/* Override ABS_RX to have maximum=1, which would cause
+	 * log2(1) = 0 and division by zero in normalize_wacom_strip()
+	 * without the guard. */
+	/* clang-format off */
+	struct input_absinfo abs_override[] = {
+		{ ABS_RX, 0, 1, 0, 0, 0 },
+		{ -1, -1, -1, -1, -1, -1 },
+	};
+	/* clang-format on */
+
+	_litest_context_destroy_ struct libinput *li = litest_create_context();
+	struct litest_device *dev =
+		litest_add_device_with_overrides(li,
+						 LITEST_WACOM_INTUOS3_PAD,
+						 NULL,
+						 NULL,
+						 abs_override,
+						 NULL);
+
+	litest_drain_events(li);
+
+	/* Send strip events - value 1 with max 1 triggers
+	 * log2(1)/log2(1) = 0/0 = NaN without the guard */
+	litest_pad_strip_start(dev, 100);
+	litest_dispatch(li);
+
+	ev = libinput_get_event(li);
+	pev = litest_is_pad_strip_event(ev, 0, LIBINPUT_TABLET_PAD_STRIP_SOURCE_FINGER);
+	pos = libinput_event_tablet_pad_get_strip_position(pev);
+	/* Without the fix, pos would be NaN from 0/0 division.
+	 * With the fix, pos must be a valid finite number. */
+	litest_assert_double_ge(pos, 0.0);
+	litest_assert_double_le(pos, 1.0);
+	libinput_event_destroy(ev);
+
+	litest_pad_strip_end(dev);
+	litest_drain_events(li);
+
+	litest_device_destroy(dev);
+}
+END_TEST
+
 START_TEST(pad_send_events_disabled)
 {
 	struct litest_device *dev = litest_current_device();
@@ -1171,6 +1219,7 @@ TEST_COLLECTION(pad)
 	litest_add(pad_has_strip, LITEST_STRIP, LITEST_ANY);
 	litest_add(pad_strip, LITEST_STRIP, LITEST_ANY);
 	litest_add(pad_strip_finger_up, LITEST_STRIP, LITEST_ANY);
+	litest_add_no_device(pad_strip_wacom_degenerate_max);
 
 	litest_add(pad_has_dial, LITEST_DIAL, LITEST_ANY);
 	litest_add(pad_dial_low_res, LITEST_DIAL, LITEST_ANY);
