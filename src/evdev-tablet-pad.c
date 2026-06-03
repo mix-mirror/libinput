@@ -237,6 +237,9 @@ normalize_wacom_ring(const struct input_absinfo *absinfo)
 static inline double
 normalize_wacom_strip(const struct input_absinfo *absinfo)
 {
+	if (absinfo->maximum <= 1 || absinfo->value <= 0)
+		return 0.0;
+
 	/* strip axes don't use a proper value, they just shift the bit left
 	 * for each position. 0 isn't a real value either, it's only sent on
 	 * finger release */
