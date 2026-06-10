@@ -2120,6 +2120,33 @@ tp_gesture_end(struct tp_dispatch *tp, usec_t time, enum gesture_cancelled cance
 	}
 }
 
+bool
+tp_gesture_is_active(const struct tp_dispatch *tp)
+{
+	switch (tp->gesture.state) {
+	case GESTURE_STATE_NONE:
+	case GESTURE_STATE_UNKNOWN:
+	case GESTURE_STATE_HOLD:
+	case GESTURE_STATE_HOLD_AND_MOTION:
+	case GESTURE_STATE_POINTER_MOTION:
+		return false;
+	case GESTURE_STATE_SCROLL_START:
+	case GESTURE_STATE_SCROLL:
+	case GESTURE_STATE_PINCH_START:
+	case GESTURE_STATE_PINCH:
+	case GESTURE_STATE_SWIPE_START:
+	case GESTURE_STATE_SWIPE:
+	case GESTURE_STATE_3FG_DRAG_OR_SWIPE_START:
+	case GESTURE_STATE_3FG_DRAG_OR_SWIPE:
+	case GESTURE_STATE_3FG_DRAG_START:
+	case GESTURE_STATE_3FG_DRAG:
+	case GESTURE_STATE_3FG_DRAG_RELEASED:
+		return true;
+	}
+
+	return false;
+}
+
 void
 tp_gesture_cancel(struct tp_dispatch *tp, usec_t time)
 {

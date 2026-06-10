@@ -2269,6 +2269,13 @@ tp_keyboard_event(usec_t time, struct libinput_event *event, void *data)
 	}
 
 	if (!tp->dwt.keyboard_active) {
+		/* don't trigger if we have an ongoing action that
+		 * can't possibly be an accidental touch.
+		 */
+		if (tp_gesture_is_active(tp) || tp_edge_scroll_is_active(tp) ||
+		    tp_tap_dragging(tp) || tp->buttons.state)
+			return;
+
 		/* This is the first non-modifier key press. Check if the
 		 * modifier mask is set. If any modifier is down we don't
 		 * trigger dwt because it's likely to be combination like

@@ -500,6 +500,25 @@ tp_edge_scroll_stop_events(struct tp_dispatch *tp, usec_t time)
 	}
 }
 
+bool
+tp_edge_scroll_is_active(const struct tp_dispatch *tp)
+{
+	struct tp_touch *t;
+
+	tp_for_each_touch(tp, t) {
+		switch (t->scroll.edge_state) {
+		case EDGE_SCROLL_TOUCH_STATE_EDGE_NEW:
+		case EDGE_SCROLL_TOUCH_STATE_EDGE:
+			return true;
+		case EDGE_SCROLL_TOUCH_STATE_NONE:
+		case EDGE_SCROLL_TOUCH_STATE_AREA:
+			break;
+		}
+	}
+
+	return false;
+}
+
 int
 tp_edge_scroll_touch_active(const struct tp_dispatch *tp, const struct tp_touch *t)
 {
