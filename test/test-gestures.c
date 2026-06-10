@@ -36,7 +36,7 @@ enum hold_gesture_behaviour {
 	HOLD_GESTURE_REQUIRE,
 };
 
-static void
+static enum litest_runner_result
 test_gesture_swipe_3fg(enum cardinal cardinal, enum hold_gesture_behaviour hold)
 {
 	struct litest_device *dev = litest_current_device();
@@ -51,7 +51,7 @@ test_gesture_swipe_3fg(enum cardinal cardinal, enum hold_gesture_behaviour hold)
 	};
 
 	if (litest_slot_count(dev) < 3)
-		return;
+		return LITEST_NOT_APPLICABLE;
 
 	dir_x = cardinals[cardinal][0];
 	dir_y = cardinals[cardinal][1];
@@ -130,9 +130,11 @@ test_gesture_swipe_3fg(enum cardinal cardinal, enum hold_gesture_behaviour hold)
 	gevent = litest_is_gesture_event(event, LIBINPUT_EVENT_GESTURE_SWIPE_END, 3);
 	litest_assert(!libinput_event_gesture_get_cancelled(gevent));
 	libinput_event_destroy(event);
+
+	return LITEST_PASS;
 }
 
-static void
+static enum litest_runner_result
 test_gesture_swipe_4fg(enum cardinal cardinal, enum hold_gesture_behaviour hold)
 {
 	struct litest_device *dev = litest_current_device();
@@ -148,7 +150,7 @@ test_gesture_swipe_4fg(enum cardinal cardinal, enum hold_gesture_behaviour hold)
 	int i;
 
 	if (litest_slot_count(dev) < 4)
-		return;
+		return LITEST_NOT_APPLICABLE;
 
 	dir_x = cardinals[cardinal][0];
 	dir_y = cardinals[cardinal][1];
@@ -242,9 +244,11 @@ test_gesture_swipe_4fg(enum cardinal cardinal, enum hold_gesture_behaviour hold)
 	gevent = litest_is_gesture_event(event, LIBINPUT_EVENT_GESTURE_SWIPE_END, 4);
 	litest_assert(!libinput_event_gesture_get_cancelled(gevent));
 	libinput_event_destroy(event);
+
+	return LITEST_PASS;
 }
 
-static void
+static enum litest_runner_result
 test_gesture_pinch_2fg(enum cardinal cardinal, enum hold_gesture_behaviour hold)
 {
 	struct litest_device *dev = litest_current_device();
@@ -264,7 +268,7 @@ test_gesture_pinch_2fg(enum cardinal cardinal, enum hold_gesture_behaviour hold)
 	if (litest_slot_count(dev) < 2 ||
 	    !libinput_device_has_capability(dev->libinput_device,
 					    LIBINPUT_DEVICE_CAP_GESTURE))
-		return;
+		return LITEST_NOT_APPLICABLE;
 
 	/* If the device is too small to provide a finger spread wide enough
 	 * to avoid the scroll bias, skip the test */
@@ -274,7 +278,7 @@ test_gesture_pinch_2fg(enum cardinal cardinal, enum hold_gesture_behaviour hold)
 		/* 0.6 because the code below gives us points like 20/y and
 		 * 80/y. 45 because the threshold in the code is 40mm */
 		if (w * 0.6 < 45)
-			return;
+			return LITEST_NOT_APPLICABLE;
 	}
 
 	dir_x = cardinals[cardinal][0];
@@ -345,9 +349,11 @@ test_gesture_pinch_2fg(enum cardinal cardinal, enum hold_gesture_behaviour hold)
 	gevent = litest_is_gesture_event(event, LIBINPUT_EVENT_GESTURE_PINCH_END, 2);
 	litest_assert(!libinput_event_gesture_get_cancelled(gevent));
 	libinput_event_destroy(event);
+
+	return LITEST_PASS;
 }
 
-static void
+static enum litest_runner_result
 test_gesture_pinch_3fg(enum cardinal cardinal, enum hold_gesture_behaviour hold)
 {
 	struct litest_device *dev = litest_current_device();
@@ -365,7 +371,7 @@ test_gesture_pinch_3fg(enum cardinal cardinal, enum hold_gesture_behaviour hold)
 	};
 
 	if (litest_slot_count(dev) < 3)
-		return;
+		return LITEST_NOT_APPLICABLE;
 
 	dir_x = cardinals[cardinal][0];
 	dir_y = cardinals[cardinal][1];
@@ -437,9 +443,11 @@ test_gesture_pinch_3fg(enum cardinal cardinal, enum hold_gesture_behaviour hold)
 	gevent = litest_is_gesture_event(event, LIBINPUT_EVENT_GESTURE_PINCH_END, 3);
 	litest_assert(!libinput_event_gesture_get_cancelled(gevent));
 	libinput_event_destroy(event);
+
+	return LITEST_PASS;
 }
 
-static void
+static enum litest_runner_result
 test_gesture_pinch_4fg(enum cardinal cardinal, enum hold_gesture_behaviour hold)
 {
 	struct litest_device *dev = litest_current_device();
@@ -457,7 +465,7 @@ test_gesture_pinch_4fg(enum cardinal cardinal, enum hold_gesture_behaviour hold)
 	};
 
 	if (litest_slot_count(dev) < 4)
-		return;
+		return LITEST_NOT_APPLICABLE;
 
 	dir_x = cardinals[cardinal][0];
 	dir_y = cardinals[cardinal][1];
@@ -533,9 +541,11 @@ test_gesture_pinch_4fg(enum cardinal cardinal, enum hold_gesture_behaviour hold)
 	gevent = litest_is_gesture_event(event, LIBINPUT_EVENT_GESTURE_PINCH_END, 4);
 	litest_assert(!libinput_event_gesture_get_cancelled(gevent));
 	libinput_event_destroy(event);
+
+	return LITEST_PASS;
 }
 
-static void
+static enum litest_runner_result
 test_gesture_spread(enum cardinal cardinal, enum hold_gesture_behaviour hold)
 {
 	struct litest_device *dev = litest_current_device();
@@ -555,7 +565,7 @@ test_gesture_spread(enum cardinal cardinal, enum hold_gesture_behaviour hold)
 	if (litest_slot_count(dev) < 2 ||
 	    !libinput_device_has_capability(dev->libinput_device,
 					    LIBINPUT_DEVICE_CAP_GESTURE))
-		return;
+		return LITEST_NOT_APPLICABLE;
 
 	/* If the device is too small to provide a finger spread wide enough
 	 * to avoid the scroll bias, skip the test */
@@ -565,7 +575,7 @@ test_gesture_spread(enum cardinal cardinal, enum hold_gesture_behaviour hold)
 		/* 0.6 because the code below gives us points like 20/y and
 		 * 80/y. 45 because the threshold in the code is 40mm */
 		if (w * 0.6 < 45)
-			return;
+			return LITEST_NOT_APPLICABLE;
 	}
 
 	dir_x = cardinals[cardinal][0];
@@ -634,16 +644,18 @@ test_gesture_spread(enum cardinal cardinal, enum hold_gesture_behaviour hold)
 	gevent = litest_is_gesture_event(event, LIBINPUT_EVENT_GESTURE_PINCH_END, 2);
 	litest_assert(!libinput_event_gesture_get_cancelled(gevent));
 	libinput_event_destroy(event);
+
+	return LITEST_PASS;
 }
 
-static void
+static enum litest_runner_result
 test_gesture_3fg_buttonarea_scroll(enum hold_gesture_behaviour hold)
 {
 	struct litest_device *dev = litest_current_device();
 	struct libinput *li = dev->libinput;
 
 	if (litest_slot_count(dev) < 3)
-		return;
+		return LITEST_NOT_APPLICABLE;
 
 	litest_enable_buttonareas(dev);
 	litest_enable_2fg_scroll(dev);
@@ -673,6 +685,8 @@ test_gesture_3fg_buttonarea_scroll(enum hold_gesture_behaviour hold)
 			     LIBINPUT_EVENT_POINTER_SCROLL_FINGER,
 			     LIBINPUT_POINTER_AXIS_SCROLL_VERTICAL,
 			     4);
+
+	return LITEST_PASS;
 }
 
 START_TEST(gestures_cap)
@@ -705,7 +719,7 @@ START_TEST(gestures_swipe_3fg)
 {
 	enum cardinal cardinal =
 		litest_test_param_get_i32(test_env->params, "direction");
-	test_gesture_swipe_3fg(cardinal, HOLD_GESTURE_IGNORE);
+	return test_gesture_swipe_3fg(cardinal, HOLD_GESTURE_IGNORE);
 }
 END_TEST
 
@@ -853,7 +867,7 @@ START_TEST(gestures_swipe_4fg)
 {
 	enum cardinal cardinal =
 		litest_test_param_get_i32(test_env->params, "direction");
-	test_gesture_swipe_4fg(cardinal, HOLD_GESTURE_IGNORE);
+	return test_gesture_swipe_4fg(cardinal, HOLD_GESTURE_IGNORE);
 }
 END_TEST
 
@@ -955,7 +969,7 @@ START_TEST(gestures_pinch)
 {
 	enum cardinal cardinal =
 		litest_test_param_get_i32(test_env->params, "direction");
-	test_gesture_pinch_2fg(cardinal, HOLD_GESTURE_IGNORE);
+	return test_gesture_pinch_2fg(cardinal, HOLD_GESTURE_IGNORE);
 }
 END_TEST
 
@@ -963,7 +977,7 @@ START_TEST(gestures_pinch_3fg)
 {
 	enum cardinal cardinal =
 		litest_test_param_get_i32(test_env->params, "direction");
-	test_gesture_pinch_3fg(cardinal, HOLD_GESTURE_IGNORE);
+	return test_gesture_pinch_3fg(cardinal, HOLD_GESTURE_IGNORE);
 }
 END_TEST
 
@@ -971,7 +985,7 @@ START_TEST(gestures_pinch_4fg)
 {
 	enum cardinal cardinal =
 		litest_test_param_get_i32(test_env->params, "direction");
-	test_gesture_pinch_4fg(cardinal, HOLD_GESTURE_IGNORE);
+	return test_gesture_pinch_4fg(cardinal, HOLD_GESTURE_IGNORE);
 }
 END_TEST
 
@@ -979,7 +993,7 @@ START_TEST(gestures_spread)
 {
 	enum cardinal cardinal =
 		litest_test_param_get_i32(test_env->params, "direction");
-	test_gesture_spread(cardinal, HOLD_GESTURE_IGNORE);
+	return test_gesture_spread(cardinal, HOLD_GESTURE_IGNORE);
 }
 END_TEST
 
@@ -1014,7 +1028,7 @@ END_TEST
 
 START_TEST(gestures_3fg_buttonarea_scroll)
 {
-	test_gesture_3fg_buttonarea_scroll(HOLD_GESTURE_IGNORE);
+	return test_gesture_3fg_buttonarea_scroll(HOLD_GESTURE_IGNORE);
 }
 END_TEST
 
@@ -1357,7 +1371,7 @@ START_TEST(gestures_hold_then_swipe_3fg)
 {
 	enum cardinal cardinal =
 		litest_test_param_get_i32(test_env->params, "direction");
-	test_gesture_swipe_3fg(cardinal, HOLD_GESTURE_REQUIRE);
+	return test_gesture_swipe_3fg(cardinal, HOLD_GESTURE_REQUIRE);
 }
 END_TEST
 
@@ -1365,7 +1379,7 @@ START_TEST(gestures_hold_then_swipe_4fg)
 {
 	enum cardinal cardinal =
 		litest_test_param_get_i32(test_env->params, "direction");
-	test_gesture_swipe_4fg(cardinal, HOLD_GESTURE_REQUIRE);
+	return test_gesture_swipe_4fg(cardinal, HOLD_GESTURE_REQUIRE);
 }
 END_TEST
 
@@ -1373,7 +1387,7 @@ START_TEST(gestures_hold_then_pinch_2fg)
 {
 	enum cardinal cardinal =
 		litest_test_param_get_i32(test_env->params, "direction");
-	test_gesture_pinch_2fg(cardinal, HOLD_GESTURE_REQUIRE);
+	return test_gesture_pinch_2fg(cardinal, HOLD_GESTURE_REQUIRE);
 }
 END_TEST
 
@@ -1381,7 +1395,7 @@ START_TEST(gestures_hold_then_pinch_3fg)
 {
 	enum cardinal cardinal =
 		litest_test_param_get_i32(test_env->params, "direction");
-	test_gesture_pinch_3fg(cardinal, HOLD_GESTURE_REQUIRE);
+	return test_gesture_pinch_3fg(cardinal, HOLD_GESTURE_REQUIRE);
 }
 END_TEST
 
@@ -1389,7 +1403,7 @@ START_TEST(gestures_hold_then_pinch_4fg)
 {
 	enum cardinal cardinal =
 		litest_test_param_get_i32(test_env->params, "direction");
-	test_gesture_pinch_4fg(cardinal, HOLD_GESTURE_REQUIRE);
+	return test_gesture_pinch_4fg(cardinal, HOLD_GESTURE_REQUIRE);
 }
 END_TEST
 
@@ -1397,13 +1411,13 @@ START_TEST(gestures_hold_then_spread)
 {
 	enum cardinal cardinal =
 		litest_test_param_get_i32(test_env->params, "direction");
-	test_gesture_spread(cardinal, HOLD_GESTURE_REQUIRE);
+	return test_gesture_spread(cardinal, HOLD_GESTURE_REQUIRE);
 }
 END_TEST
 
 START_TEST(gestures_hold_then_3fg_buttonarea_scroll)
 {
-	test_gesture_3fg_buttonarea_scroll(HOLD_GESTURE_REQUIRE);
+	return test_gesture_3fg_buttonarea_scroll(HOLD_GESTURE_REQUIRE);
 }
 END_TEST
 
