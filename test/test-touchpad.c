@@ -4786,6 +4786,93 @@ START_TEST(touchpad_dwt_dont_interrupt_buttons)
 }
 END_TEST
 
+START_TEST(touchpad_dwt_dont_interrupt_pointer_motion)
+{
+	struct litest_device *touchpad = litest_current_device();
+	struct libinput *li = touchpad->libinput;
+
+	if (!has_disable_while_typing(touchpad))
+		return LITEST_NOT_APPLICABLE;
+
+	_destroy_(litest_device) *keyboard = dwt_init_paired_keyboard(li, touchpad);
+	litest_disable_tap(touchpad->libinput_device);
+	litest_disable_hold_gestures(touchpad->libinput_device);
+	litest_drain_events(li);
+
+	/* Start moving the pointer - move enough to exceed 20mm
+	 * cumulative distance. The movement needs to span most of the
+	 * touchpad width to ensure >20mm on all test devices.
+	 */
+	litest_touch_down(touchpad, 0, 10, 50);
+	litest_touch_move_to(touchpad, 0, 10, 50, 80, 50, 40);
+	litest_dispatch(li);
+	litest_assert_only_typed_events(li, LIBINPUT_EVENT_POINTER_MOTION);
+
+	/* Wait more than 500ms to exceed the time threshold */
+	litest_timeout(li, 600);
+
+	/* Move a bit more to generate new events */
+	litest_touch_move_to(touchpad, 0, 80, 50, 85, 50, 5);
+	litest_dispatch(li);
+	litest_assert_only_typed_events(li, LIBINPUT_EVENT_POINTER_MOTION);
+
+	/* Press a key - should NOT trigger DWT because the touch
+	 * has been moving for >500ms and >20mm cumulative distance
+	 */
+	litest_keyboard_key(keyboard, KEY_A, true);
+	litest_keyboard_key(keyboard, KEY_A, false);
+	litest_dispatch(li);
+	litest_assert_only_typed_events(li, LIBINPUT_EVENT_KEYBOARD_KEY);
+
+	/* Continue moving - should still produce motion events */
+	litest_touch_move_to(touchpad, 0, 85, 50, 90, 50, 10);
+	litest_dispatch(li);
+	litest_assert_only_typed_events(li, LIBINPUT_EVENT_POINTER_MOTION);
+
+	litest_touch_up(touchpad, 0);
+	litest_dispatch(li);
+}
+END_TEST
+
+START_TEST(touchpad_dwt_pointer_motion_short_no_protect)
+{
+	struct litest_device *touchpad = litest_current_device();
+	struct libinput *li = touchpad->libinput;
+
+	if (!has_disable_while_typing(touchpad))
+		return LITEST_NOT_APPLICABLE;
+
+	_destroy_(litest_device) *keyboard = dwt_init_paired_keyboard(li, touchpad);
+	litest_disable_tap(touchpad->libinput_device);
+	litest_disable_hold_gestures(touchpad->libinput_device);
+	litest_drain_events(li);
+
+	/* Move the pointer but not enough cumulative distance to
+	 * exceed 20mm
+	 */
+	litest_touch_down(touchpad, 0, 50, 50);
+	litest_touch_move_to(touchpad, 0, 50, 50, 55, 50, 5);
+	litest_dispatch(li);
+	litest_drain_events(li);
+
+	/* Wait more than 500ms */
+	litest_timeout(li, 600);
+
+	/* Press a key - should trigger DWT because the touch hasn't
+	 * moved far enough (< 20mm)
+	 */
+	litest_keyboard_key(keyboard, KEY_A, true);
+	litest_keyboard_key(keyboard, KEY_A, false);
+	litest_dispatch(li);
+
+	/* Touch should now be blocked by DWT */
+	litest_touch_move_to(touchpad, 0, 55, 50, 70, 50, 10);
+	litest_touch_up(touchpad, 0);
+
+	litest_assert_only_typed_events(li, LIBINPUT_EVENT_KEYBOARD_KEY);
+}
+END_TEST
+
 START_TEST(touchpad_dwt_config_default_timeout)
 {
 	struct litest_device *dev = litest_current_device();
@@ -7545,6 +7632,8 @@ TEST_COLLECTION(touchpad_dwt)
 	litest_add(touchpad_dwt_dont_interrupt_gesture_pinch, LITEST_TOUCHPAD, LITEST_SINGLE_TOUCH);
 	litest_add(touchpad_dwt_dont_interrupt_tap_drag, LITEST_TOUCHPAD, LITEST_ANY);
 	litest_add(touchpad_dwt_dont_interrupt_buttons, LITEST_TOUCHPAD, LITEST_ANY);
+	litest_add(touchpad_dwt_dont_interrupt_pointer_motion, LITEST_TOUCHPAD, LITEST_ANY);
+	litest_add(touchpad_dwt_pointer_motion_short_no_protect, LITEST_TOUCHPAD, LITEST_ANY);
 	litest_add(touchpad_dwt_config_default_timeout, LITEST_TOUCHPAD, LITEST_ANY);
 	litest_add(touchpad_dwt_config_default_on, LITEST_TOUCHPAD, LITEST_ANY);
 	litest_add(touchpad_dwt_config_default_off, LITEST_ANY, LITEST_TOUCHPAD);

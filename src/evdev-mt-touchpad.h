@@ -280,6 +280,11 @@ struct tp_touch {
 		double last_speed; /* speed in mm/s at last sample */
 		unsigned int exceeded_count;
 	} speed;
+
+	struct {
+		double cumulative_distance_mm;
+		bool distance_exceeded;
+	} dwt;
 };
 
 enum suspend_trigger {

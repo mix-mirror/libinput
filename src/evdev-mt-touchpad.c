@@ -369,6 +369,8 @@ tp_begin_touch(struct tp_dispatch *tp, struct tp_touch *t, usec_t time)
 	t->tap.is_thumb = false;
 	t->tap.is_palm = false;
 	t->speed.exceeded_count = 0;
+	t->dwt.cumulative_distance_mm = 0.0;
+	t->dwt.distance_exceeded = false;
 	assert(tp->nfingers_down >= 1);
 	tp->hysteresis.last_motion_time = time;
 }
@@ -1683,6 +1685,18 @@ tp_process_state(struct tp_dispatch *tp, usec_t time)
 		tp_motion_hysteresis(tp, t);
 		tp_motion_history_push(t, time);
 
+		if (!t->dwt.distance_exceeded) {
+			struct device_coords raw_delta = tp_get_delta(t);
+			struct device_float_coords fdelta = {
+				.x = raw_delta.x,
+				.y = raw_delta.y,
+			};
+			struct phys_coords mm = tp_phys_delta(tp, fdelta);
+			t->dwt.cumulative_distance_mm += length_in_mm(mm);
+			if (t->dwt.cumulative_distance_mm >= 20.0)
+				t->dwt.distance_exceeded = true;
+		}
+
 		/* Touch speed handling: if we'are above the threshold,
 		 * count each event that we're over the threshold up to 10
 		 * events. Count down when we are below the speed.
@@ -2227,6 +2241,31 @@ tp_key_ignore_for_dwt(unsigned int keycode)
 	}
 }
 
+static bool
+tp_pointer_motion_is_active(const struct tp_dispatch *tp, usec_t time)
+{
+	struct tp_touch *t;
+
+	if (tp->nfingers_down != 1)
+		return false;
+
+	tp_for_each_touch(tp, t) {
+		if (t->state != TOUCH_UPDATE)
+			continue;
+
+		if (!t->dwt.distance_exceeded)
+			continue;
+
+		if (usec_cmp(usec_delta(time, t->initial_time), usec_from_millis(500)) <
+		    0)
+			continue;
+
+		return true;
+	}
+
+	return false;
+}
+
 static void
 tp_keyboard_event(usec_t time, struct libinput_event *event, void *data)
 {
@@ -2274,6 +2313,14 @@ tp_keyboard_event(usec_t time, struct libinput_event *event, void *data)
 		 */
 		if (tp_gesture_is_active(tp) || tp_edge_scroll_is_active(tp) ||
 		    tp_tap_dragging(tp) || tp->buttons.state)
+			return;
+
+		/* don't trigger if the finger has been moving the pointer
+		 * for at least 500ms and has traveled more than 20mm total -
+		 * this is clearly an intentional pointer movement, not an
+		 * accidental palm/touch.
+		 */
+		if (tp_pointer_motion_is_active(tp, time))
 			return;
 
 		/* This is the first non-modifier key press. Check if the
