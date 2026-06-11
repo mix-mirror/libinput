@@ -2918,12 +2918,12 @@ static int
 tablet_init(struct tablet_dispatch *tablet, struct evdev_device *device)
 {
 	static unsigned int tablet_ids = 0;
-	struct libinput *li = evdev_libinput_context(device);
 	struct libevdev *evdev = device->evdev;
 	enum libinput_tablet_tool_axis axis;
 	int rc = -1;
 	WacomDevice *wacom = NULL;
 #ifdef HAVE_LIBWACOM
+	struct libinput *li = evdev_libinput_context(device);
 	WacomDeviceDatabase *db = libinput_libwacom_ref(li);
 	if (db) {
 		char event_path[64];
