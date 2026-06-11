@@ -572,7 +572,7 @@ str_sanitize(const char *str)
 		}
 	}
 	if (!needs_sanitization)
-		return strdup(str);
+		return strndup(str, slen);
 
 	char *sanitized = zalloc(2 * slen + 1);
 	const char *src = str;
