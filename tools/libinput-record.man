@@ -82,6 +82,14 @@ Record hidraw events alongside device events.
 See
 .B RECORDING HID REPORTS
 for more details.
+.TP 8
+.B \-\-no\-events
+Only print the device description(s) and exit immediately without
+waiting for events. The output file will contain the full YAML structure
+with an empty
+.B events
+section. This option is mutually exclusive with
+.BR \-\-autorestart .
 
 .SH RECORDING MULTIPLE DEVICES
 Sometimes it is necessary to record the events from multiple devices

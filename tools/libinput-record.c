@@ -134,6 +134,7 @@ struct record_context {
 
 	bool had_events;
 	bool stop;
+	bool no_events;
 };
 
 #define resize(array_, sz_) \
@@ -2306,53 +2307,58 @@ mainloop(struct record_context *ctx)
 
 		list_for_each(d, &ctx->devices, link) {
 			print_device_description(d);
-			iprintf(d->fp, I_DEVICE, "events:\n");
+			iprintf(d->fp,
+				I_DEVICE,
+				"events:%s\n",
+				ctx->no_events ? " []" : "");
 		}
 
-		ctx->timestamps.last_wall_time = usec_from_now();
-		print_wall_time(ctx);
+		if (!ctx->no_events) {
+			ctx->timestamps.last_wall_time = usec_from_now();
+			print_wall_time(ctx);
 
-		if (ctx->libinput) {
-			libinput_dispatch(ctx->libinput);
-			handle_libinput_events(ctx, ctx->first_device, true);
-		}
-
-		if (autorestart) {
-			/* Dispatch the events that woke us up from
-			 * the idle wait */
-			dispatch_ready_sources(ctx, ep, count);
-
-			if (ctx->first_device->fp != stdout)
-				print_progress_bar();
-		}
-
-		while (true) {
-			int rc = dispatch_sources(ctx);
-			if (rc < 0) { /* error */
-				fprintf(stderr, "Error: %s\n", strerror(-rc));
-				ctx->stop = true;
-				break;
+			if (ctx->libinput) {
+				libinput_dispatch(ctx->libinput);
+				handle_libinput_events(ctx, ctx->first_device, true);
 			}
 
-			/* set by the signalfd handler */
-			if (ctx->stop)
-				break;
+			if (autorestart) {
+				/* Dispatch the events that woke us up from
+				 * the idle wait */
+				dispatch_ready_sources(ctx, ep, count);
 
-			if (rc == 0) {
-				fprintf(stderr, " ... timeout\n");
-				break;
+				if (ctx->first_device->fp != stdout)
+					print_progress_bar();
 			}
 
-			if (ctx->first_device->fp != stdout)
-				print_progress_bar();
-		}
+			while (true) {
+				int rc = dispatch_sources(ctx);
+				if (rc < 0) { /* error */
+					fprintf(stderr, "Error: %s\n", strerror(-rc));
+					ctx->stop = true;
+					break;
+				}
 
-		if (autorestart) {
-			list_for_each(d, &ctx->devices, link) {
-				iprintf(d->fp,
-					I_NONE,
-					"# Closing after %us inactivity",
-					usec_to_seconds(ctx->timeout));
+				/* set by the signalfd handler */
+				if (ctx->stop)
+					break;
+
+				if (rc == 0) {
+					fprintf(stderr, " ... timeout\n");
+					break;
+				}
+
+				if (ctx->first_device->fp != stdout)
+					print_progress_bar();
+			}
+
+			if (autorestart) {
+				list_for_each(d, &ctx->devices, link) {
+					iprintf(d->fp,
+						I_NONE,
+						"# Closing after %us inactivity",
+						usec_to_seconds(ctx->timeout));
+				}
 			}
 		}
 
@@ -2386,7 +2392,7 @@ mainloop(struct record_context *ctx)
 			}
 		}
 		free_clear(&ctx->output_file.name_with_suffix);
-	} while (autorestart && !ctx->stop);
+	} while (!ctx->no_events && autorestart && !ctx->stop);
 
 	sigprocmask(SIG_UNBLOCK, &mask, NULL);
 
@@ -2545,7 +2551,7 @@ init_hidraw(struct record_context *ctx)
 static void
 usage(void)
 {
-	printf("Usage: %s [--help] [--all] [--autorestart=2] [--output-file filename] [/dev/input/event0] [...]\n"
+	printf("Usage: %s [--help] [--all] [--autorestart=2] [--output-file filename] [--no-events] [/dev/input/event0] [...]\n"
 	       "Common use-cases:\n"
 	       "\n"
 	       " sudo %s -o recording.yml\n"
@@ -2559,7 +2565,11 @@ usage(void)
 	       " sudo %s -o recording.yml /dev/input/event3 /dev/input/event4\n"
 	       "    Records the two devices into the same recordings file.\n"
 	       "\n"
+	       " sudo %s --no-events /dev/input/event3\n"
+	       "    Print the device description only, do not wait for events.\n"
+	       "\n"
 	       "For more information, see the %s(1) man page\n",
+	       program_invocation_short_name,
 	       program_invocation_short_name,
 	       program_invocation_short_name,
 	       program_invocation_short_name,
@@ -2661,6 +2671,7 @@ enum options {
 	OPT_LIBINPUT,
 	OPT_HIDRAW,
 	OPT_GRAB,
+	OPT_NO_EVENTS,
 };
 
 int
@@ -2681,6 +2692,7 @@ main(int argc, char **argv)
 		{ "with-libinput", no_argument, 0, OPT_LIBINPUT },
 		{ "with-hidraw", no_argument, 0, OPT_HIDRAW },
 		{ "grab", no_argument, 0, OPT_GRAB },
+		{ "no-events", no_argument, 0, OPT_NO_EVENTS },
 		{ 0, 0, 0, 0 },
 	};
 	struct record_device *d;
@@ -2740,6 +2752,9 @@ main(int argc, char **argv)
 		case OPT_GRAB:
 			grab = true;
 			break;
+		case OPT_NO_EVENTS:
+			ctx.no_events = true;
+			break;
 		default:
 			usage();
 			rc = EXIT_INVALID_USAGE;
@@ -2769,6 +2784,13 @@ main(int argc, char **argv)
 			ndevices--;
 		if (pos == FIRST)
 			optind++;
+	}
+
+	if (ctx.no_events && !usec_is_zero(ctx.timeout)) {
+		fprintf(stderr,
+			"Options --no-events and --autorestart are mutually exclusive\n");
+		rc = EXIT_INVALID_USAGE;
+		goto out;
 	}
 
 	if (!usec_is_zero(ctx.timeout) && output_arg == NULL) {

@@ -281,6 +281,13 @@ sequence again, Ctrl+C stops it and removes the virtual device.
 Users are advised to always replay a recorded event sequence to ensure they
 have captured the bug.
 
+Sometimes only the device description is needed, e.g. for checking the
+device's capabilities, udev properties, or quirks. Use
+``libinput record --no-events`` to print the device description and
+exit immediately without waiting for any events::
+
+     $ sudo libinput record --no-events /dev/input/event17
+
 More arguments are available, see the **libinput-record(1)** and
 **libinput-replay(1)** man pages.
 

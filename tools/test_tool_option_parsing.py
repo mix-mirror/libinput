@@ -375,7 +375,15 @@ def test_libinput_debug_gui_verbose(libinput_debug_gui):
 
 
 @pytest.mark.parametrize(
-    "arg", ["--help", "--show-keycodes", "--with-libinput", "--with-hidraw", "--grab"]
+    "arg",
+    [
+        "--help",
+        "--show-keycodes",
+        "--with-libinput",
+        "--with-hidraw",
+        "--grab",
+        "--no-events",
+    ],
 )
 def test_libinput_record_args(libinput_record, arg):
     libinput_record.run_command_success([arg])
@@ -425,6 +433,10 @@ def test_libinput_record_autorestart(libinput_record, recording):
     libinput_record.run_command_invalid(["--autorestart"])
     libinput_record.run_command_success(["--autorestart=2"])
     libinput_record.run_command_success(["-o", recording, "--autorestart=2"])
+
+
+def test_libinput_record_no_events_autorestart(libinput_record):
+    libinput_record.run_command_invalid(["--no-events", "--autorestart=2"])
 
 
 def main():
