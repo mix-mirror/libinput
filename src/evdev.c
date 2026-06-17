@@ -2116,24 +2116,34 @@ evdev_notify_added_device(struct evdev_device *device)
 static bool
 evdev_device_have_same_syspath(struct udev_device *udev_device, int fd)
 {
-	struct udev *udev = udev_device_get_udev(udev_device);
-	struct udev_device *udev_device_new = NULL;
 	struct stat st;
-	bool rc = false;
 
 	if (fstat(fd, &st) < 0)
-		goto out;
+		return false;
 
-	udev_device_new = udev_device_new_from_devnum(udev, 'c', st.st_rdev);
-	if (!udev_device_new)
-		goto out;
+#ifdef __FreeBSD__
+	/* On FreeBSD the evdev syspath (/dev/input/eventN) is determined by
+	 * the device's minor number, while the cached devnum carries both
+	 * that minor and the evdev major.  Comparing the full devnum against
+	 * the fd's st_rdev therefore verifies the same identity as the
+	 * syspath comparison -- in fact slightly more strongly, since it
+	 * also confirms the major -- without needing the device node to be
+	 * visible to the caller.  libudev-devd populates that devnum from
+	 * the kern.evdev.input.N.devnum sysctl, which is readable even in a
+	 * jail whose devfs does not expose the input node.
+	 */
+	return udev_device_get_devnum(udev_device) == st.st_rdev;
+#else
+	struct udev *udev = udev_device_get_udev(udev_device);
+	_unref_(udev_device) *udev_device_new =
+		udev_device_new_from_devnum(udev, 'c', st.st_rdev);
+	bool rc = false;
 
-	rc = streq(udev_device_get_syspath(udev_device_new),
-		   udev_device_get_syspath(udev_device));
-out:
 	if (udev_device_new)
-		udev_device_unref(udev_device_new);
+		rc = streq(udev_device_get_syspath(udev_device_new),
+			   udev_device_get_syspath(udev_device));
 	return rc;
+#endif
 }
 
 static bool
