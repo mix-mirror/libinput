@@ -443,7 +443,7 @@ def write_udev_rule(device, fuzz):
         fd = open(fname, "x")
     except FileExistsError:
         yesno = input("File {} exists, overwrite? [Y/n] ".format(fname))
-        if yesno.lower == "n":
+        if yesno.lower() == "n":
             return
 
         fd = open(fname, "w")
