@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8
 # vim: set expandtab shiftwidth=4:
 # -*- Mode: python; coding: utf-8; indent-tabs-mode: nil -*- */
 #
@@ -32,8 +31,9 @@
 import argparse
 import os
 import sys
-import yaml
+
 import libevdev
+import yaml
 
 # minimum width of a field in the table
 MIN_FIELD_WIDTH = 6
@@ -58,9 +58,11 @@ def is_tracked_axis(code, allowlist, denylist):
         return False
 
     # We don't do slots in this tool
-    if code.type == libevdev.EV_ABS:
-        if libevdev.EV_ABS.ABS_MT_SLOT <= code <= libevdev.EV_ABS.ABS_MAX:
-            return False
+    if (
+        code.type == libevdev.EV_ABS
+        and libevdev.EV_ABS.ABS_MT_SLOT <= code <= libevdev.EV_ABS.ABS_MAX
+    ):
+        return False
 
     if allowlist:
         return code in allowlist
@@ -104,7 +106,8 @@ def main(argv):
 
     isatty = os.isatty(sys.stdout.fileno())
 
-    yml = yaml.safe_load(open(args.path[0]))
+    with open(args.path[0]) as f:
+        yml = yaml.safe_load(f)
     if yml["ndevices"] > 1:
         print(f"WARNING: Using only first {yml['ndevices']} devices in recording")
     device = yml["devices"][0]
@@ -189,7 +192,7 @@ def main(argv):
                 if continuation_count:
                     if not isatty:
                         print(f" ... +{continuation_count}", end="")
-                    print("")
+                    print()
                     continuation_count = 0
 
                 fields.insert(0, f"{e.sec: 3d}.{e.usec // 1000:03d}")

@@ -4,12 +4,12 @@
 #
 # Run with pytest
 
-from pathlib import Path
-
 import configparser
 import os
-import pytest
 import re
+from pathlib import Path
+
+import pytest
 
 # see the IDs from
 # https://github.com/torvalds/linux/blob/master/drivers/hid/hid-ids.h#L772

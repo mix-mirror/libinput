@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
 
-from pathlib import Path
-from dataclasses import dataclass
-
 import argparse
 import itertools
 import os
 import sys
+from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass
@@ -86,10 +85,12 @@ def main():
         errors = []
         errors.extend(test_tab_after_space(lines))
         errors.extend(test_trailing_whitespace(lines))
-        if any(file.name.endswith(suffix) for suffix in [".c", ".h"]):
-            if not file.parts[0] == "include":
-                errors.extend(test_duplicate_empty_lines(lines))
-                errors.extend(test_empty_line_between_braces(lines))
+        if (
+            any(file.name.endswith(suffix) for suffix in [".c", ".h"])
+            and file.parts[0] != "include"
+        ):
+            errors.extend(test_duplicate_empty_lines(lines))
+            errors.extend(test_empty_line_between_braces(lines))
 
         for e in errors:
             print(f"{red}ERROR: {e.message} in {file}:{reset}", file=sys.stderr)

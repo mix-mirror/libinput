@@ -23,11 +23,11 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+import logging
 import os
 import resource
-import sys
 import subprocess
-import logging
+import sys
 
 try:
     import pytest
@@ -39,7 +39,7 @@ except ImportError:
 logger = logging.getLogger("test")
 logger.setLevel(logging.DEBUG)
 
-if "@DISABLE_WARNING@" != "yes":
+if "@DISABLE_WARNING@" != "yes":  # noqa: PLR0133
     print("This is the source file, run the one in the meson builddir instead")
     sys.exit(1)
 
@@ -49,10 +49,10 @@ def _disable_coredump():
 
 
 def run_command(args):
-    logger.debug("run command: {}".format(" ".join(args)))
+    logger.debug(f"run command: {' '.join(args)}")
     with subprocess.Popen(
         args,
-        preexec_fn=_disable_coredump,
+        preexec_fn=_disable_coredump,  # noqa: PLW1509
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     ) as p:
@@ -66,7 +66,7 @@ def run_command(args):
         return p.returncode, stdout.decode("UTF-8"), stderr.decode("UTF-8")
 
 
-class LibinputTool(object):
+class LibinputTool:
     libinput_tool = "libinput"
     subtool = None
 
@@ -239,22 +239,22 @@ options = {
 # Options that allow for glob patterns
 @pytest.mark.parametrize("option", options["pattern"])
 def test_options_pattern(libinput_debug_tool, option):
-    libinput_debug_tool.run_command_success(["--disable-{}".format(option), "*"])
-    libinput_debug_tool.run_command_success(["--disable-{}".format(option), "abc*"])
+    libinput_debug_tool.run_command_success([f"--disable-{option}", "*"])
+    libinput_debug_tool.run_command_success([f"--disable-{option}", "abc*"])
 
 
 @pytest.mark.parametrize("option", options["enable-disable"])
 def test_options_enable_disable(libinput_debug_tool, option):
-    libinput_debug_tool.run_command_success(["--enable-{}".format(option)])
-    libinput_debug_tool.run_command_success(["--disable-{}".format(option)])
+    libinput_debug_tool.run_command_success([f"--enable-{option}"])
+    libinput_debug_tool.run_command_success([f"--disable-{option}"])
 
 
 @pytest.mark.parametrize("option", options["enums"].items())
 def test_options_enums(libinput_debug_tool, option):
     name, values = option
     for v in values:
-        libinput_debug_tool.run_command_success(["--{}".format(name), v])
-        libinput_debug_tool.run_command_success(["--{}={}".format(name, v)])
+        libinput_debug_tool.run_command_success([f"--{name}", v])
+        libinput_debug_tool.run_command_success([f"--{name}={v}"])
 
 
 @pytest.mark.parametrize("option", options["ranges"].items())
@@ -263,11 +263,11 @@ def test_options_ranges(libinput_debug_tool, option):
     minimum, maximum, step = values
     value = minimum
     while value < maximum:
-        libinput_debug_tool.run_command_success(["--{}".format(name), str(value)])
-        libinput_debug_tool.run_command_success(["--{}={}".format(name, value)])
+        libinput_debug_tool.run_command_success([f"--{name}", str(value)])
+        libinput_debug_tool.run_command_success([f"--{name}={value}"])
         value += step
-    libinput_debug_tool.run_command_success(["--{}".format(name), str(maximum)])
-    libinput_debug_tool.run_command_success(["--{}={}".format(name, maximum)])
+    libinput_debug_tool.run_command_success([f"--{name}", str(maximum)])
+    libinput_debug_tool.run_command_success([f"--{name}={maximum}"])
 
 
 def test_apply_to(libinput_debug_tool):
@@ -407,7 +407,7 @@ def test_libinput_record_all(libinput_record, recording):
 def test_libinput_record_outfile(libinput_record, recording):
     libinput_record.run_command_success(["-o", recording])
     libinput_record.run_command_success(["--output-file", recording])
-    libinput_record.run_command_success(["--output-file={}".format(recording)])
+    libinput_record.run_command_success([f"--output-file={recording}"])
 
 
 def test_libinput_record_single(libinput_record, recording):
@@ -448,13 +448,12 @@ def main():
         args += ["-n", ncores]
     except ImportError:
         logger.info("python-xdist missing, this test will be slow")
-        pass
 
     args += ["@MESON_BUILD_ROOT@"]
 
     os.environ["LIBINPUT_RUNNING_TEST_SUITE"] = "1"
 
-    return subprocess.run([sys.executable] + args).returncode
+    return subprocess.run([sys.executable] + args, check=False).returncode
 
 
 if __name__ == "__main__":

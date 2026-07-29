@@ -24,16 +24,16 @@
 # DEALINGS IN THE SOFTWARE.
 #
 
-import os
-import sys
 import argparse
+import os
 import subprocess
+import sys
 
 try:
     import libevdev
     import pyudev
 except ModuleNotFoundError as e:
-    print("Error: {}".format(str(e)), file=sys.stderr)
+    print(f"Error: {e!s}", file=sys.stderr)
     print(
         "One or more python modules are missing. Please install those "
         "modules and re-run this tool."
@@ -84,7 +84,7 @@ class Device(libevdev.Device):
         else:
             self.path = path
 
-        fd = open(self.path, "rb")
+        fd = open(self.path, "rb")  # noqa: SIM115
         super().__init__(fd)
         context = pyudev.Context()
         self.udev_device = pyudev.Devices.from_device_file(context, self.path)
@@ -116,21 +116,15 @@ class Device(libevdev.Device):
             0x36: self.udev_device.get("LIBINPUT_FUZZ_36"),
         }
 
-        if axes[0x35] is not None:
-            if axes[0x35] != axes[0x00]:
-                print_bold(
-                    "WARNING: fuzz mismatch ABS_X: {}, ABS_MT_POSITION_X: {}".format(
-                        axes[0x00], axes[0x35]
-                    )
-                )
+        if axes[0x35] is not None and axes[0x35] != axes[0x00]:
+            print_bold(
+                f"WARNING: fuzz mismatch ABS_X: {axes[0x00]}, ABS_MT_POSITION_X: {axes[0x35]}"
+            )
 
-        if axes[0x36] is not None:
-            if axes[0x36] != axes[0x01]:
-                print_bold(
-                    "WARNING: fuzz mismatch ABS_Y: {}, ABS_MT_POSITION_Y: {}".format(
-                        axes[0x01], axes[0x36]
-                    )
-                )
+        if axes[0x36] is not None and axes[0x36] != axes[0x01]:
+            print_bold(
+                f"WARNING: fuzz mismatch ABS_Y: {axes[0x01]}, ABS_MT_POSITION_Y: {axes[0x36]}"
+            )
 
         xfuzz = axes[0x35] or axes[0x00]
         yfuzz = axes[0x36] or axes[0x01]
@@ -174,13 +168,13 @@ class Device(libevdev.Device):
 
 
 def print_fuzz(what, fuzz):
-    print("  Checking {}... ".format(what), end="")
+    print(f"  Checking {what}... ", end="")
     if fuzz is None:
         print("not set")
     elif fuzz == (0, 0):
         print("is zero")
     else:
-        print("x={} y={}".format(*fuzz))
+        print(f"x={fuzz[0]} y={fuzz[1]}")
 
 
 def handle_existing_entry(device, fuzz):
@@ -200,7 +194,7 @@ def handle_existing_entry(device, fuzz):
     }
 
     has_existing_rules = False
-    for key, value in overrides.items():
+    for value in overrides.values():
         if value is not None:
             has_existing_rules = True
             break
@@ -209,22 +203,22 @@ def handle_existing_entry(device, fuzz):
 
     print_red("Error! ", end="")
     print("This device already has axis overrides defined")
-    print("")
+    print()
     print_bold("Searching for existing override...")
 
     # Construct a template that looks like a hwdb entry (values only) from
     # the udev property values
     template = [
-        " EVDEV_ABS_00={}".format(overrides[0x00]),
-        " EVDEV_ABS_01={}".format(overrides[0x01]),
+        f" EVDEV_ABS_00={overrides[0x00]}",
+        f" EVDEV_ABS_01={overrides[0x01]}",
     ]
     if overrides[0x35] is not None:
         template += [
-            " EVDEV_ABS_35={}".format(overrides[0x35]),
-            " EVDEV_ABS_36={}".format(overrides[0x36]),
+            f" EVDEV_ABS_35={overrides[0x35]}",
+            f" EVDEV_ABS_36={overrides[0x36]}",
         ]
 
-    print("Checking in {}... ".format(OVERRIDE_HWDB_FILE), end="")
+    print(f"Checking in {OVERRIDE_HWDB_FILE}... ", end="")
     entry, prefix, lineno = check_file_for_lines(OVERRIDE_HWDB_FILE, template)
     if entry is not None:
         print_green("found")
@@ -232,7 +226,7 @@ def handle_existing_entry(device, fuzz):
         return False
     else:
         print_red("not found")
-        print("Checking in {}... ".format(DEFAULT_HWDB_FILE), end="")
+        print(f"Checking in {DEFAULT_HWDB_FILE}... ", end="")
         entry, prefix, lineno = check_file_for_lines(DEFAULT_HWDB_FILE, template)
         if entry is not None:
             print_green("found")
@@ -245,20 +239,20 @@ def handle_existing_entry(device, fuzz):
             print("Exiting now.")
             return True
 
-    print_bold("Probable entry for this device found in line {}:".format(lineno))
+    print_bold(f"Probable entry for this device found in line {lineno}:")
     print("\n".join(prefix + entry))
-    print("")
+    print()
 
     print_bold("Suggested new entry for this device:")
     new_entry = []
-    for i in range(0, len(template)):
+    for i in range(len(template)):
         parts = entry[i].split(":")
         while len(parts) < 4:
             parts.append("")
         parts[3] = str(fuzz)
         new_entry.append(":".join(parts))
     print("\n".join(prefix + new_entry))
-    print("")
+    print()
 
     # Not going to overwrite the 60-evdev.hwdb entry with this program, too
     # risky. And it may not be our device match anyway.
@@ -267,7 +261,7 @@ def handle_existing_entry(device, fuzz):
         "\n".join(
             (
                 "1. Check the above suggestion for sanity. Does it match your device?",
-                "2. Open {} and amend the existing entry".format(DEFAULT_HWDB_FILE),
+                f"2. Open {DEFAULT_HWDB_FILE} and amend the existing entry",
                 "   as recommended above",
                 "",
                 "   The property format is:",
@@ -310,7 +304,7 @@ def reload_and_trigger_udev(device):
     subprocess.run(["systemd-hwdb", "update"], check=True)
     syspath = device.path.replace("/dev/input/", "/sys/class/input/")
     time.sleep(2)
-    print("Running udevadm trigger {}".format(syspath))
+    print(f"Running udevadm trigger {syspath}")
     subprocess.run(["udevadm", "trigger", syspath], check=True)
     time.sleep(2)
 
@@ -350,7 +344,8 @@ def check_file_for_lines(path, template):
     two lines before the matching lines)
     """
     try:
-        lines = [l[:-1] for l in open(path).readlines()]
+        with open(path) as f:
+            lines = [l[:-1] for l in f]
         idx = -1
         try:
             while idx < len(lines) - 1:
@@ -375,11 +370,12 @@ def write_udev_rule(device, fuzz):
     """Write out a udev rule that may match the device, run udevadm trigger and
     check if the udev rule worked. Of course, there's plenty to go wrong...
     """
-    print("")
+    print()
     print_bold("Guessing a udev rule to overwrite the fuzz")
 
     # Some devices match better on pvr, others on pn, so we get to try both. yay
-    modalias = open("/sys/class/dmi/id/modalias").readlines()[0]
+    with open("/sys/class/dmi/id/modalias") as f:
+        modalias = f.readlines()[0]
     ms = modalias.split(":")
     svn, pn, pvr = None, None, None
     for m in ms:
@@ -391,7 +387,7 @@ def write_udev_rule(device, fuzz):
             pvr = m
 
     # Let's print out both to inform and/or confuse the user
-    template = "\n".join(
+    template = "\n".join(  # noqa: FLY002
         (
             "# {} {}",
             "evdev:name:{}:dmi:*:{}*:{}*:",
@@ -409,14 +405,14 @@ def write_udev_rule(device, fuzz):
         svn[3:], device.name, device.name, svn, pn, fuzz, fuzz, fuzz, fuzz
     )
 
-    print("Full modalias is: {}".format(modalias))
+    print(f"Full modalias is: {modalias}")
     print()
     print_bold("Suggested udev rule, option 1:")
     print(rule1)
     print()
     print_bold("Suggested udev rule, option 2:")
     print(rule2)
-    print("")
+    print()
 
     # The weird hwdb matching behavior means we match on the least specific
     # rule (i.e. most wildcards) first although that was supposed to be fixed in
@@ -440,20 +436,20 @@ def write_udev_rule(device, fuzz):
 
     fname = OVERRIDE_HWDB_FILE
     try:
-        fd = open(fname, "x")
+        fd = open(fname, "x")  # noqa: SIM115
     except FileExistsError:
-        yesno = input("File {} exists, overwrite? [Y/n] ".format(fname))
+        yesno = input(f"File {fname} exists, overwrite? [Y/n] ")
         if yesno.lower() == "n":
             return
 
-        fd = open(fname, "w")
+        fd = open(fname, "w")  # noqa: SIM115
 
-    fd.write("# File generated by libinput measure fuzz\n\n")
-    fd.write(rule)
-    fd.close()
+    with fd:
+        fd.write("# File generated by libinput measure fuzz\n\n")
+        fd.write(rule)
 
     if test_hwdb_entry(device, fuzz):
-        print("Your hwdb override file is in {}".format(fname))
+        print(f"Your hwdb override file is in {fname}")
         print_bold("Please test the new fuzz setting by restarting libinput")
         print_bold(
             "Then submit a pull request for this hwdb entry to "
@@ -489,7 +485,7 @@ def main(args):
 
     try:
         device = Device(args.path)
-        print_bold("Using {}: {}".format(device.name, device.path))
+        print_bold(f"Using {device.name}: {device.path}")
 
         fuzz = device.check_property()
         print_fuzz("udev property", fuzz)
@@ -504,9 +500,9 @@ def main(args):
     except PermissionError:
         print("Permission denied, please re-run as root")
     except InvalidConfigurationError as e:
-        print("Error: {}".format(e))
+        print(f"Error: {e}")
     except InvalidDeviceError as e:
-        print("Error: {}".format(e))
+        print(f"Error: {e}")
     except KeyboardInterrupt:
         print("Exited on user request")
 

@@ -29,7 +29,7 @@ import sys
 try:
     import pyudev
 except ModuleNotFoundError as e:
-    print("Error: {}".format(str(e)), file=sys.stderr)
+    print(f"Error: {e!s}", file=sys.stderr)
     print(
         "One or more python modules are missing. Please install those "
         "modules and re-run this tool."
@@ -99,7 +99,7 @@ def list_hid_devices():
         print(f"  driver: '{d.driver}'")
         print(f"  hidraw: [{', '.join(h for h in d.hidraws)}]")
         print(f"  evdev:  [{', '.join(h for h in d.evdevs)}]")
-        print("")
+        print()
 
 
 def main():

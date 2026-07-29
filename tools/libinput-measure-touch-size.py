@@ -24,15 +24,15 @@
 # DEALINGS IN THE SOFTWARE.
 #
 
-import sys
-import subprocess
 import argparse
+import subprocess
+import sys
 
 try:
     import libevdev
     import pyudev
 except ModuleNotFoundError as e:
-    print("Error: {}".format(str(e)), file=sys.stderr)
+    print(f"Error: {e!s}", file=sys.stderr)
     print(
         "One or more python modules are missing. Please install those "
         "modules and re-run this tool."
@@ -40,7 +40,7 @@ except ModuleNotFoundError as e:
     sys.exit(1)
 
 
-class Range(object):
+class Range:
     """Class to keep a min/max of a value around"""
 
     def __init__(self):
@@ -52,7 +52,7 @@ class Range(object):
         self.max = max(self.max, value)
 
 
-class Touch(object):
+class Touch:
     """A single data point of a sequence (i.e. one event frame)"""
 
     def __init__(self, major=None, minor=None, orientation=None):
@@ -89,15 +89,15 @@ class Touch(object):
         self.dirty = True
 
     def __str__(self):
-        s = "Touch: major {:3d}".format(self.major)
+        s = f"Touch: major {self.major:3d}"
         if self.minor is not None:
-            s += ", minor {:3d}".format(self.minor)
+            s += f", minor {self.minor:3d}"
         if self.orientation is not None:
-            s += ", orientation {:+3d}".format(self.orientation)
+            s += f", orientation {self.orientation:+3d}"
         return s
 
 
-class TouchSequence(object):
+class TouchSequence:
     """A touch sequence from beginning to end"""
 
     def __init__(self, device, tracking_id):
@@ -146,15 +146,11 @@ class TouchSequence(object):
 
     def _str_summary(self):
         if not self.points:
-            return "{:78s}".format("Sequence: no major/minor values recorded")
+            return f"{'Sequence: no major/minor values recorded':78s}"
 
-        s = "Sequence: major: [{:3d}..{:3d}] ".format(
-            self.major_range.min, self.major_range.max
-        )
+        s = f"Sequence: major: [{self.major_range.min:3d}..{self.major_range.max:3d}] "
         if self.device.has_minor:
-            s += "minor: [{:3d}..{:3d}] ".format(
-                self.minor_range.min, self.minor_range.max
-            )
+            s += f"minor: [{self.minor_range.min:3d}..{self.minor_range.max:3d}] "
         if self.was_down:
             s += " down"
         if self.was_palm:
@@ -166,11 +162,11 @@ class TouchSequence(object):
 
     def _str_state(self):
         touch = self.points[-1]
-        s = "{}, tags: {} {} {}".format(
-            touch,
-            "down" if self.is_down else "    ",
-            "palm" if self.is_palm else "    ",
-            "thumb" if self.is_thumb else "     ",
+        s = (
+            f"{touch}, tags:"
+            f" {'down' if self.is_down else '    '}"
+            f" {'palm' if self.is_palm else '    '}"
+            f" {'thumb' if self.is_thumb else '     '}"
         )
         return s
 
@@ -186,10 +182,10 @@ class Device(libevdev.Device):
         else:
             self.path = path
 
-        fd = open(self.path, "rb")
+        fd = open(self.path, "rb")  # noqa: SIM115
         super().__init__(fd)
 
-        print("Using {}: {}\n".format(self.name, self.path))
+        print(f"Using {self.name}: {self.path}\n")
 
         if not self.has(libevdev.EV_ABS.ABS_MT_TOUCH_MAJOR):
             raise InvalidDeviceError("Device does not have ABS_MT_TOUCH_MAJOR")
@@ -228,10 +224,10 @@ class Device(libevdev.Device):
 
     def _init_thresholds_from_quirks(self):
         command = ["libinput", "quirks", "list", self.path]
-        cmd = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        cmd = subprocess.run(command, capture_output=True, check=False)
         if cmd.returncode != 0:
             print(
-                "Error querying quirks: {}".format(cmd.stderr.decode("utf-8")),
+                f"Error querying quirks: {cmd.stderr.decode('utf-8')}",
                 file=sys.stderr,
             )
             return
@@ -260,7 +256,7 @@ class Device(libevdev.Device):
             libevdev.EV_KEY.BTN_TOOL_QUADTAP,
             libevdev.EV_KEY.BTN_TOOL_QUINTTAP,
         ]
-        if event.code in tapcodes and event.value > 0:
+        if event.code in tapcodes and event.value > 0:  # noqa: SIM102
             if not self.warned:
                 self.warned = True
                 print(
@@ -277,7 +273,7 @@ class Device(libevdev.Device):
                 try:
                     s = self.current_sequence()
                     s.finalize()
-                    print("\r{}".format(s))
+                    print(f"\r{s}")
                 except IndexError:
                     # If the finger was down during start
                     pass
@@ -292,7 +288,7 @@ class Device(libevdev.Device):
         if self.touch.dirty:
             try:
                 self.current_sequence().append(self.touch)
-                print("\r{}".format(self.current_sequence()), end="")
+                print(f"\r{self.current_sequence()}", end="")
                 self.touch = Touch(
                     major=self.touch.major,
                     minor=self.touch.minor,
@@ -311,9 +307,9 @@ class Device(libevdev.Device):
 
     def read_events(self):
         print("Ready for recording data.")
-        print("Touch sizes used: {}:{}".format(self.down, self.up))
-        print("Palm size used: {}".format(self.palm))
-        print("Thumb size used: {}".format(self.thumb))
+        print(f"Touch sizes used: {self.down}:{self.up}")
+        print(f"Palm size used: {self.palm}")
+        print(f"Thumb size used: {self.thumb}")
         print(
             "Place a single finger on the device to measure touch size.\n"
             "Ctrl+C to exit\n"
@@ -333,7 +329,7 @@ def colon_tuple(string):
     except:  # noqa
         pass
 
-    msg = "{} is not in format N:M (N >= M)".format(string)
+    msg = f"{string} is not in format N:M (N >= M)"
     raise argparse.ArgumentTypeError(msg)
 
 
@@ -378,7 +374,7 @@ def main(args):
         print(
             "This device does not have the capabilities for size-based touch detection."
         )
-        print("Details: {}".format(e))
+        print(f"Details: {e}")
 
 
 if __name__ == "__main__":

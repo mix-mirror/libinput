@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8
 # vim: set expandtab shiftwidth=4:
 # -*- Mode: python; coding: utf-8; indent-tabs-mode: nil -*- */
 #
@@ -29,12 +28,13 @@
 #
 # Input is a libinput record yaml file
 
-from dataclasses import dataclass
 import argparse
 import os
 import sys
-import yaml
+from dataclasses import dataclass
+
 import libevdev
+import yaml
 
 COLOR_RESET = "\x1b[0m"
 COLOR_RED = "\x1b[6;31m"
@@ -127,7 +127,8 @@ def main(argv):
         COLOR_RESET = ""
         COLOR_RED = ""
 
-    yml = yaml.safe_load(open(args.path[0]))
+    with open(args.path[0]) as f:
+        yml = yaml.safe_load(f)
     if yml["ndevices"] > 1:
         print(f"WARNING: Using only first {yml['ndevices']} devices in recording")
     device = yml["devices"][0]
@@ -178,7 +179,7 @@ def main(argv):
     def filter_buttons(buttons):
         return filter(
             lambda c: c in buttons,
-            map(lambda c: libevdev.evbit("EV_KEY", c), device["evdev"]["codes"][1]),
+            (libevdev.evbit("EV_KEY", c) for c in device["evdev"]["codes"][1]),
         )
 
     buttons = list(filter_buttons(buttons))

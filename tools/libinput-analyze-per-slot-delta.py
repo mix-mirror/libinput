@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8
 # vim: set expandtab shiftwidth=4:
 # -*- Mode: python; coding: utf-8; indent-tabs-mode: nil -*- */
 #
@@ -29,15 +28,14 @@
 #
 # Input is a libinput record yaml file
 
-from dataclasses import dataclass, field, replace
-from enum import Enum
-
 import argparse
 import math
 import sys
-import yaml
-import libevdev
+from dataclasses import dataclass, field, replace
+from enum import Enum
 
+import libevdev
+import yaml
 
 COLOR_RESET = "\x1b[0m"
 COLOR_RED = "\x1b[6;31m"
@@ -172,7 +170,7 @@ class SlotFormatter:
                 string = " ".join(c for c in components if c)
             else:
                 x, y = slot.position.x, slot.position.y
-                string = "{} {}{:4d}/{:4d}{}".format(direction, color, x, y, reset)
+                string = f"{direction} {color}{x:4d}/{y:4d}{reset}"
             self.have_data = True
             self.slots.append(string.ljust(self.width + len(color) + len(reset)))
 
@@ -267,7 +265,8 @@ def main(argv):
         COLOR_GREEN = ""
         COLOR_BLUE = ""
 
-    yml = yaml.safe_load(open(args.path[0]))
+    with open(args.path[0]) as f:
+        yml = yaml.safe_load(f)
     device = yml["devices"][0]
     absinfo = device["evdev"]["absinfo"]
     try:
@@ -278,7 +277,7 @@ def main(argv):
     if args.use_st:
         nslots = 1
 
-    slots = [Slot(i) for i in range(0, nslots)]
+    slots = [Slot(i) for i in range(nslots)]
     slots[0].used = True
 
     if args.use_mm:
@@ -458,19 +457,17 @@ def main(argv):
 
                 if fmt.have_data:
                     if nskipped_lines > 0:
-                        print("")
+                        print()
                         nskipped_lines = 0
                     print(
-                        "{:2d}.{:06d} {:+5d}ms {} {} {}".format(
-                            e.sec, e.usec, tdelta, tool_state, button_state, fmt
-                        )
+                        f"{e.sec:2d}.{e.usec:06d} {tdelta:+5d}ms {tool_state} {button_state} {fmt}"
                     )
                 elif fmt.filtered:
                     nskipped_lines += 1
                     print(
                         "\r",
                         " " * 21,
-                        "... {} below threshold".format(nskipped_lines),
+                        f"... {nskipped_lines} below threshold",
                         flush=True,
                         end="",
                     )

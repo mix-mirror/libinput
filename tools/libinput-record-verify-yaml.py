@@ -25,11 +25,11 @@
 
 import argparse
 import os
+import re
 import sys
 import unittest
-import yaml
-import re
 
+import yaml
 from pkg_resources import parse_version
 
 

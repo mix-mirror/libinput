@@ -23,21 +23,21 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+import argparse
+import math
+import multiprocessing
 import os
 import sys
 import time
-import math
-import multiprocessing
-import argparse
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 try:
     import libevdev
-    import yaml
     import pyudev
+    import yaml
 except ModuleNotFoundError as e:
-    print("Error: {}".format(e), file=sys.stderr)
+    print(f"Error: {e}", file=sys.stderr)
     print(
         "One or more python modules are missing. Please install those "
         "modules and re-run this tool."
@@ -62,7 +62,7 @@ def fetch(yaml, key):
     try:
         return yaml[key]
     except KeyError:
-        raise YamlException("Failed to get '{}' from recording.".format(key))
+        raise YamlException(f"Failed to get '{key}' from recording.")
 
 
 def check_udev_properties(yaml_data, uinput):
@@ -117,7 +117,7 @@ def create(device):
 
     ids = fetch(evdev, "id")
     if len(ids) != 4:
-        raise YamlException("Invalid ID format: {}".format(ids))
+        raise YamlException(f"Invalid ID format: {ids}")
     d.id = dict(zip(["bustype", "vendor", "product", "version"], ids))
 
     codes = fetch(evdev, "codes")
@@ -157,21 +157,13 @@ def print_events(devnode, indent, evs):
     for e in evs:
         if e.type != libevdev.EV_SYN:
             print(
-                "{}: {}{:-6d}.{:06d} {} / {:<20s} {:6d}".format(
-                    devnode,
-                    " " * (indent * 8),
-                    e.sec,
-                    e.usec,
-                    e.type.name,
-                    e.code.name,
-                    e.value,
-                )
+                f"{devnode}: {' ' * (indent * 8)}"
+                f"{e.sec:-6d}.{e.usec:06d} {e.type.name} / {e.code.name:<20s} {e.value:6d}"
             )
         if e.type == libevdev.EV_SYN:
             print(
-                "{}: {}----------------- SYN_REPORT ({}) -----------------".format(
-                    devnode, " " * (indent * 8), e.value
-                )
+                f"{devnode}: {' ' * (indent * 8)}"
+                f"----------------- SYN_REPORT ({e.value}) -----------------"
             )
 
 
@@ -266,7 +258,7 @@ def loop(args, recording):
 
     for idx, d in enumerate(devices):
         uinput = create(d)
-        print("{}: {}".format(uinput.devnode, uinput.name))
+        print(f"{uinput.devnode}: {uinput.name}")
         d["__uinput"] = uinput  # cheaper to hide it in the dict then work around it
         d["__index"] = idx
         d["__first_event_offset"] = toffset
@@ -307,11 +299,11 @@ def create_device_quirk(device, quirks):
     name = fetch(evdev, "name")
     id = fetch(evdev, "id")
     quirk = (
-        "[libinput-replay {name}]\n"
-        "MatchName={name}\n"
-        "MatchVendor=0x{id[1]:04X}\n"
-        "MatchProduct=0x{id[2]:04X}\n"
-    ).format(name=name, id=id)
+        f"[libinput-replay {name}]\n"
+        f"MatchName={name}\n"
+        f"MatchVendor=0x{id[1]:04X}\n"
+        f"MatchProduct=0x{id[2]:04X}\n"
+    )
     quirk += "\n".join(quirks)
     return quirk
 
@@ -324,7 +316,7 @@ def setup_quirks(recording) -> Path | None:
         if not any(q.startswith("AttrIsVirtual=") for q in qs):
             try:
                 is_virtual = d["udev"]["virtual"]
-            except Exception:
+            except (KeyError, TypeError):
                 is_virtual = False
             qs.append(f"AttrIsVirtual={int(is_virtual)}")
         quirks.append(create_device_quirk(d, qs))
@@ -353,18 +345,14 @@ def check_file(recording):
     version = fetch(recording, "version")
     if version != SUPPORTED_FILE_VERSION:
         raise YamlException(
-            "Invalid file format: {}, expected {}".format(
-                version, SUPPORTED_FILE_VERSION
-            )
+            f"Invalid file format: {version}, expected {SUPPORTED_FILE_VERSION}"
         )
 
     ndevices = fetch(recording, "ndevices")
     devices = fetch(recording, "devices")
     if ndevices != len(devices):
         error(
-            "WARNING: truncated file, expected {} devices, got {}".format(
-                ndevices, len(devices)
-            )
+            f"WARNING: truncated file, expected {ndevices} devices, got {len(devices)}"
         )
 
 
@@ -404,9 +392,9 @@ def main():
     except KeyboardInterrupt:
         pass
     except (PermissionError, OSError) as e:
-        error("Error: failed to open device: {}".format(e))
+        error(f"Error: failed to open device: {e}")
     except YamlException as e:
-        error("Error: failed to parse recording: {}".format(e))
+        error(f"Error: failed to parse recording: {e}")
     finally:
         if quirks_file:
             quirks_file.unlink()
@@ -416,7 +404,7 @@ def main():
                 import errno
 
                 if e.errno != errno.ENOTEMPTY:
-                    raise e
+                    raise
 
 
 if __name__ == "__main__":

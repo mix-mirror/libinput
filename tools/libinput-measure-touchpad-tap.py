@@ -24,15 +24,15 @@
 # DEALINGS IN THE SOFTWARE.
 #
 
-import sys
 import argparse
+import sys
+import textwrap
 
 try:
     import libevdev
-    import textwrap
     import pyudev
 except ModuleNotFoundError as e:
-    print("Error: {}".format(e), file=sys.stderr)
+    print(f"Error: {e}", file=sys.stderr)
     print(
         "One or more python modules are missing. Please install those "
         "modules and re-run this tool."
@@ -58,7 +58,7 @@ def us2ms(us):
     return int(us / 1000)
 
 
-class Touch(object):
+class Touch:
     def __init__(self, down):
         self._down = down
         self._up = down
@@ -91,10 +91,10 @@ class Device(libevdev.Device):
             self.path = self._find_touch_device()
         else:
             self.path = path
-        fd = open(self.path, "rb")
+        fd = open(self.path, "rb")  # noqa: SIM115
         super().__init__(fd)
 
-        print("Using {}: {}\n".format(self.name, self.path))
+        print(f"Using {self.name}: {self.path}\n")
 
         if not self.has(libevdev.EV_KEY.BTN_TOUCH):
             raise InvalidDeviceError("device does not have BTN_TOUCH")
@@ -132,7 +132,7 @@ class Device(libevdev.Device):
             self.touches.append(t)
         else:
             self.touches[-1].up = tv2us(event.sec, event.usec)
-            msg("\rTouch sequences detected: {}".format(len(self.touches)), end="")
+            msg(f"\rTouch sequences detected: {len(self.touches)}", end="")
 
     def handle_key(self, event):
         tapcodes = [
@@ -141,7 +141,7 @@ class Device(libevdev.Device):
             libevdev.EV_KEY.BTN_TOOL_QUADTAP,
             libevdev.EV_KEY.BTN_TOOL_QUINTTAP,
         ]
-        if event.code in tapcodes and event.value > 0:
+        if event.code in tapcodes and event.value > 0:  # noqa: SIM102
             if not self.warned:
                 self.warned = True
                 error(
@@ -184,12 +184,12 @@ class Device(libevdev.Device):
         d90pc = deltas[int(ndeltas * 0.90)]
 
         print("Time: ")
-        print("  Max delta: {}ms".format(int(dmax)))
-        print("  Min delta: {}ms".format(int(dmin)))
-        print("  Average delta: {}ms".format(int(davg)))
-        print("  Median delta: {}ms".format(int(dmedian)))
-        print("  90th percentile: {}ms".format(int(d90pc)))
-        print("  95th percentile: {}ms".format(int(d95pc)))
+        print(f"  Max delta: {int(dmax)}ms")
+        print(f"  Min delta: {int(dmin)}ms")
+        print(f"  Average delta: {int(davg)}ms")
+        print(f"  Median delta: {int(dmedian)}ms")
+        print(f"  90th percentile: {int(d90pc)}ms")
+        print(f"  95th percentile: {int(d95pc)}ms")
 
     def print_dat(self):
         print("# libinput-measure-touchpad-tap")
@@ -277,9 +277,9 @@ def main(args):
         msg("")
         device.print(args.format)
     except (PermissionError, OSError) as e:
-        error("Error: failed to open device. {}".format(e))
+        error(f"Error: failed to open device. {e}")
     except InvalidDeviceError as e:
-        error("Error: {}".format(e))
+        error(f"Error: {e}")
 
 
 if __name__ == "__main__":

@@ -24,14 +24,14 @@
 # DEALINGS IN THE SOFTWARE.
 
 
-import sys
 import argparse
+import sys
 
 try:
     import libevdev
     import pyudev
 except ModuleNotFoundError as e:
-    print("Error: {}".format(str(e)), file=sys.stderr)
+    print(f"Error: {e!s}", file=sys.stderr)
     print(
         "One or more python modules are missing. Please install those "
         "modules and re-run this tool."
@@ -49,7 +49,7 @@ class Point:
         self.y = y
 
 
-class Touchpad(object):
+class Touchpad:
     def __init__(self, evdev):
         x = evdev.absinfo[libevdev.EV_ABS.ABS_X]
         y = evdev.absinfo[libevdev.EV_ABS.ABS_Y]
@@ -122,13 +122,12 @@ class Touchpad(object):
         self._y.maximum = self.max.y
 
     def draw(self):
+        min_x = self.min.x if self.min.x is not None else 0
+        max_x = self.max.x if self.max.x is not None else 0
+        min_y = self.min.y if self.min.y is not None else 0
+        max_y = self.max.y if self.max.y is not None else 0
         print(
-            "Detected axis range: x [{:4d}..{:4d}], y [{:4d}..{:4d}]".format(
-                self.min.x if self.min.x is not None else 0,
-                self.max.x if self.max.x is not None else 0,
-                self.min.y if self.min.y is not None else 0,
-                self.max.y if self.max.y is not None else 0,
-            )
+            f"Detected axis range: x [{min_x:4d}..{max_x:4d}], y [{min_y:4d}..{max_y:4d}]"
         )
 
         print()
@@ -137,22 +136,22 @@ class Touchpad(object):
 
         top = int(self.pos.y * self.rows)
 
-        print("+{}+".format("".ljust(self.columns, "-")))
-        for row in range(0, top):
-            print("|{}|".format("".ljust(self.columns)))
+        print(f"+{''.ljust(self.columns, '-')}+")
+        for row in range(top):
+            print(f"|{''.ljust(self.columns)}|")
 
         left = int(self.pos.x * self.columns)
         right = max(0, self.columns - 1 - left)
-        print("|{}{}{}|".format("".ljust(left), "O", "".ljust(right)))
+        print(f"|{''.ljust(left)}O{''.ljust(right)}|")
 
         for row in range(top + 1, self.rows):
-            print("|{}|".format("".ljust(self.columns)))
+            print(f"|{''.ljust(self.columns)}|")
 
-        print("+{}+".format("".ljust(self.columns, "-")))
+        print(f"+{''.ljust(self.columns, '-')}+")
 
         print("Press Ctrl+C to stop".center(self.columns))
 
-        print("\033[{}A".format(self.rows + 8), flush=True)
+        print(f"\033[{self.rows + 8}A", flush=True)
 
         self.rows_printed = self.rows + 8
 
@@ -160,7 +159,7 @@ class Touchpad(object):
         # Erase all previous lines so we're not left with rubbish
         for row in range(self.rows_printed):
             print("\033[K")
-        print("\033[{}A".format(self.rows_printed))
+        print(f"\033[{self.rows_printed}A")
 
 
 def dimension(string):
@@ -172,7 +171,7 @@ def dimension(string):
     except:  # noqa
         pass
 
-    msg = "{} is not in format WxH".format(string)
+    msg = f"{string} is not in format WxH"
     raise argparse.ArgumentTypeError(msg)
 
 
@@ -191,9 +190,9 @@ def dmi_modalias_match(modalias):
     # Based on the current 60-evdev.hwdb, Lenovo uses pvr and everyone else
     # uses pn to provide a human-identifiable match
     if dmi["svn"] == "LENOVO":
-        return "dmi:*svn{}:*pvr{}*".format(dmi["svn"], dmi["pvr"])
+        return f"dmi:*svn{dmi['svn']}:*pvr{dmi['pvr']}*"
     else:
-        return "dmi:*svn{}:*pn{}*".format(dmi["svn"], dmi["pn"])
+        return f"dmi:*svn{dmi['svn']}:*pn{dmi['pn']}*"
 
 
 def main(args):
@@ -229,7 +228,7 @@ def main(args):
                         break
                     parent = parent.parent
 
-                print("Using {}: {}".format(name, device.device_node))
+                print(f"Using {name}: {device.device_node}")
                 break
         else:
             print("Unable to find a touchpad device.", file=sys.stderr)
@@ -242,31 +241,27 @@ def main(args):
         print("********************************************************************")
         print("WARNING: axis overrides already in place for this device:")
         for prop in overrides:
-            print("  {}={}".format(prop, dev.properties[prop]))
+            print(f"  {prop}={dev.properties[prop]}")
         print("The systemd hwdb already overrides the axis ranges and/or resolution.")
         print("This tool is not needed unless you want to verify the axis overrides.")
         print("********************************************************************")
         print()
 
     try:
-        fd = open(args.path, "rb")
+        fd = open(args.path, "rb")  # noqa: SIM115
         evdev = libevdev.Device(fd)
         touchpad = Touchpad(evdev)
         print(
-            "Kernel specified touchpad size: {:.1f}x{:.1f}mm".format(
-                touchpad.width, touchpad.height
-            )
+            f"Kernel specified touchpad size: {touchpad.width:.1f}x{touchpad.height:.1f}mm"
         )
-        print("User specified touchpad size:   {:.1f}x{:.1f}mm".format(*args.size))
+        print(
+            f"User specified touchpad size:   {args.size[0]:.1f}x{args.size[1]:.1f}mm"
+        )
 
         print()
         print(
-            "Kernel axis range:   x [{:4d}..{:4d}], y [{:4d}..{:4d}]".format(
-                touchpad.x.minimum,
-                touchpad.x.maximum,
-                touchpad.y.minimum,
-                touchpad.y.maximum,
-            )
+            f"Kernel axis range:   x [{touchpad.x.minimum:4d}..{touchpad.x.maximum:4d}],"
+            f" y [{touchpad.y.minimum:4d}..{touchpad.y.maximum:4d}]"
         )
 
         print("Put your finger on the touchpad to start\033[1A")
@@ -286,12 +281,8 @@ def main(args):
             touchpad.update_from_data()
 
         print(
-            "Detected axis range: x [{:4d}..{:4d}], y [{:4d}..{:4d}]".format(
-                touchpad.x.minimum,
-                touchpad.x.maximum,
-                touchpad.y.minimum,
-                touchpad.y.maximum,
-            )
+            f"Detected axis range: x [{touchpad.x.minimum:4d}..{touchpad.x.maximum:4d}],"
+            f" y [{touchpad.y.minimum:4d}..{touchpad.y.maximum:4d}]"
         )
 
         touchpad.x.resolution = round(
@@ -302,9 +293,8 @@ def main(args):
         )
 
         print(
-            "Resolutions calculated based on user-specified size: x {}, y {} units/mm".format(
-                touchpad.x.resolution, touchpad.y.resolution
-            )
+            f"Resolutions calculated based on user-specified size:"
+            f" x {touchpad.x.resolution}, y {touchpad.y.resolution} units/mm"
         )
 
         # If both x/y are within some acceptable deviation, we skip the axis
@@ -330,7 +320,8 @@ def main(args):
 
         use_dmi = evdev.id["bustype"] not in [0x03, 0x05]  # USB, Bluetooth
         if use_dmi:
-            modalias = open("/sys/class/dmi/id/modalias").read().strip()
+            with open("/sys/class/dmi/id/modalias") as f:
+                modalias = f.read().strip()
             print(
                 "Note: the dmi modalias match is a guess based on your machine's modalias:"
             )
@@ -342,48 +333,28 @@ def main(args):
         print("-8<--------------------------")
         print("# Laptop model description (e.g. Lenovo X1 Carbon 5th)")
         if use_dmi:
-            print("evdev:name:{}:{}*".format(evdev.name, dmi_modalias_match(modalias)))
+            print(f"evdev:name:{evdev.name}:{dmi_modalias_match(modalias)}*")
         else:
             print(
-                "evdev:input:b{:04X}v{:04X}p{:04X}*".format(
-                    evdev.id["bustype"], evdev.id["vendor"], evdev.id["product"]
-                )
+                f"evdev:input:b{evdev.id['bustype']:04X}"
+                f"v{evdev.id['vendor']:04X}"
+                f"p{evdev.id['product']:04X}*"
             )
-        print(
-            " EVDEV_ABS_00={}:{}:{}".format(
-                touchpad.x.minimum if not skip else "",
-                touchpad.x.maximum if not skip else "",
-                touchpad.x.resolution,
-            )
-        )
-        print(
-            " EVDEV_ABS_01={}:{}:{}".format(
-                touchpad.y.minimum if not skip else "",
-                touchpad.y.maximum if not skip else "",
-                touchpad.y.resolution,
-            )
-        )
+        xmin = touchpad.x.minimum if not skip else ""
+        xmax = touchpad.x.maximum if not skip else ""
+        ymin = touchpad.y.minimum if not skip else ""
+        ymax = touchpad.y.maximum if not skip else ""
+        print(f" EVDEV_ABS_00={xmin}:{xmax}:{touchpad.x.resolution}")
+        print(f" EVDEV_ABS_01={ymin}:{ymax}:{touchpad.y.resolution}")
         if evdev.absinfo[libevdev.EV_ABS.ABS_MT_POSITION_X]:
-            print(
-                " EVDEV_ABS_35={}:{}:{}".format(
-                    touchpad.x.minimum if not skip else "",
-                    touchpad.x.maximum if not skip else "",
-                    touchpad.x.resolution,
-                )
-            )
-            print(
-                " EVDEV_ABS_36={}:{}:{}".format(
-                    touchpad.y.minimum if not skip else "",
-                    touchpad.y.maximum if not skip else "",
-                    touchpad.y.resolution,
-                )
-            )
+            print(f" EVDEV_ABS_35={xmin}:{xmax}:{touchpad.x.resolution}")
+            print(f" EVDEV_ABS_36={ymin}:{ymax}:{touchpad.y.resolution}")
         print("-8<--------------------------")
         print(
             "Instructions on what to do with this snippet are in /usr/lib/udev/hwdb.d/60-evdev.hwdb"
         )
     except DeviceError as e:
-        print("Error: {}".format(e), file=sys.stderr)
+        print(f"Error: {e}", file=sys.stderr)
         return 1
     except PermissionError:
         print("Unable to open device. Please run me as root", file=sys.stderr)

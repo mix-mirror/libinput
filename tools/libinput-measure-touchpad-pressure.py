@@ -24,12 +24,12 @@
 # DEALINGS IN THE SOFTWARE.
 #
 
-import sys
-import subprocess
 import argparse
 import fcntl
 import os
 import select
+import subprocess
+import sys
 import termios
 import tty
 
@@ -37,7 +37,7 @@ try:
     import libevdev
     import pyudev
 except ModuleNotFoundError as e:
-    print("Error: {}".format(str(e)), file=sys.stderr)
+    print(f"Error: {e!s}", file=sys.stderr)
     print(
         "One or more python modules are missing. Please install those "
         "modules and re-run this tool."
@@ -45,7 +45,7 @@ except ModuleNotFoundError as e:
     sys.exit(1)
 
 
-class TableFormatter(object):
+class TableFormatter:
     ALIGNMENT = 3
 
     def __init__(self):
@@ -63,7 +63,7 @@ class TableFormatter(object):
             # +2 because we want space left/right of text
             w = ((len(arg) + 2 + align) // align) * align
             self.colwidths.append(w + 1)
-            s += " {:^{width}s} │".format(arg, width=w - 2)
+            s += f" {arg:^{w - 2}s} │"
 
         return s
 
@@ -73,11 +73,11 @@ class TableFormatter(object):
             w -= 1  # width includes │ separator
             if isinstance(arg, str):
                 # We want space margins for strings
-                s += " {:{width}s} │".format(arg, width=w - 2)
+                s += f" {arg:{w - 2}s} │"
             elif isinstance(arg, bool):
-                s += "{:^{width}s}│".format("x" if arg else " ", width=w)
+                s += f"{'x' if arg else ' ':^{w}s}│"
             else:
-                s += "{:^{width}d}│".format(arg, width=w)
+                s += f"{arg:^{w}d}│"
 
         if len(args) < len(self.colwidths):
             s += "│".rjust(self.width - len(s), " ")
@@ -93,7 +93,7 @@ class TableFormatter(object):
 fmt = TableFormatter()
 
 
-class Range(object):
+class Range:
     """Class to keep a min/max of a value around"""
 
     def __init__(self):
@@ -105,14 +105,14 @@ class Range(object):
         self.max = max(self.max, value)
 
 
-class Touch(object):
+class Touch:
     """A single data point of a sequence (i.e. one event frame)"""
 
     def __init__(self, pressure=None):
         self.pressure = pressure
 
 
-class TouchSequence(object):
+class TouchSequence:
     """A touch sequence from beginning to end"""
 
     def __init__(self, device, tracking_id):
@@ -224,13 +224,13 @@ class Device(libevdev.Device):
         else:
             self.path = path
 
-        fd = open(self.path, "rb")
+        fd = open(self.path, "rb")  # noqa: SIM115
         flags = fcntl.fcntl(fd, fcntl.F_GETFL)
         fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
         super().__init__(fd)
 
-        print("Using {}: {}\n".format(self.name, self.path))
+        print(f"Using {self.name}: {self.path}\n")
 
         self.has_mt_pressure = True
         absinfo = self.absinfo[libevdev.EV_ABS.ABS_MT_PRESSURE]
@@ -270,10 +270,10 @@ class Device(libevdev.Device):
 
     def _init_thresholds_from_quirks(self):
         command = ["libinput", "quirks", "list", self.path]
-        cmd = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        cmd = subprocess.run(command, capture_output=True, check=False)
         if cmd.returncode != 0:
             print(
-                "Error querying quirks: {}".format(cmd.stderr.decode("utf-8")),
+                f"Error querying quirks: {cmd.stderr.decode('utf-8')}",
                 file=sys.stderr,
             )
             return
@@ -323,7 +323,7 @@ def handle_abs(device, event):
             try:
                 s = device.current_sequence()
                 s.finalize()
-                print("\r\033[2K{}".format(s))
+                print(f"\r\033[2K{s}")
             except IndexError:
                 # If the finger was down at startup
                 pass
@@ -333,7 +333,7 @@ def handle_abs(device, event):
         try:
             s = device.current_sequence()
             s.append(Touch(pressure=event.value))
-            print("\r\033[2K{}".format(s))
+            print(f"\r\033[2K{s}")
         except IndexError:
             # If the finger was down at startup
             pass
@@ -429,7 +429,7 @@ def colon_tuple(string):
     except:  # noqa
         pass
 
-    msg = "{} is not in format N:M (N > M)".format(string)
+    msg = f"{string} is not in format N:M (N > M)"
     raise argparse.ArgumentTypeError(msg)
 
 
@@ -476,7 +476,7 @@ def main(args):
 
         loop(device)
     except KeyboardInterrupt:
-        print("\r\033[2K{}".format(fmt.separator()))
+        print(f"\r\033[2K{fmt.separator()}")
         print()
 
     except (PermissionError, OSError):
@@ -485,7 +485,7 @@ def main(args):
         print(
             "This device does not have the capabilities for pressure-based touch detection."
         )
-        print("Details: {}".format(e))
+        print(f"Details: {e}")
 
 
 if __name__ == "__main__":

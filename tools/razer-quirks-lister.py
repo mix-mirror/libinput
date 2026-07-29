@@ -10,13 +10,12 @@
 # $ cd path/to/libinput.git/
 # $ ./tools/razer-quirks-list.py
 
-from pathlib import Path
-from collections import namedtuple
-import tempfile
 import shutil
 import subprocess
 import sys
-
+import tempfile
+from collections import namedtuple
+from pathlib import Path
 
 KeyboardDescriptor = namedtuple("KeyboardDescriptor", ["vid", "pid", "name"])
 

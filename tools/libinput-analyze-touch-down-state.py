@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8
 # vim: set expandtab shiftwidth=4:
 # -*- Mode: python; coding: utf-8; indent-tabs-mode: nil -*- */
 #
@@ -32,8 +31,9 @@
 import argparse
 import enum
 import sys
-import yaml
+
 import libevdev
+import yaml
 
 
 class Slot:
@@ -92,7 +92,8 @@ def main(argv):
     )
     args = parser.parse_args()
 
-    yml = yaml.safe_load(open(args.path[0]))
+    with open(args.path[0]) as f:
+        yml = yaml.safe_load(f)
     device = yml["devices"][0]
     absinfo = device["evdev"]["absinfo"]
     try:
@@ -109,11 +110,11 @@ def main(argv):
         libevdev.EV_KEY.BTN_TOOL_QUINTTAP: 4,
     }
     if args.use_st:
-        for bit in tool_slot_map:
+        for bit, value in tool_slot_map.items():
             if bit.value in device["evdev"]["codes"][libevdev.EV_KEY.value]:
-                nslots = max(nslots, tool_slot_map[bit])
+                nslots = max(nslots, value)
 
-    slots = [Slot(i) for i in range(0, nslots)]
+    slots = [Slot(i) for i in range(nslots)]
     # We claim the first slots are used just to make the formatting
     # more consistent
     for i in range(min(5, len(slots))):
@@ -128,8 +129,7 @@ def main(argv):
 
     def events():
         for event in device["events"]:
-            for evdev in event["evdev"]:
-                yield evdev
+            yield from event["evdev"]
 
     for evdev in events():
         e = libevdev.InputEvent(
@@ -164,7 +164,7 @@ def main(argv):
                         s.end()
                     else:
                         s.begin()
-                elif e.code in (
+                elif e.code in (  # noqa: SIM102
                     libevdev.EV_ABS.ABS_MT_POSITION_X,
                     libevdev.EV_ABS.ABS_MT_POSITION_Y,
                     libevdev.EV_ABS.ABS_MT_PRESSURE,
@@ -188,9 +188,7 @@ def main(argv):
                     last_time = t
 
                 fmt = " | ".join([str(s) for s in slots if s.used])
-                print(
-                    "{:2d}.{:06d} | {:+7.3f}s | {}".format(e.sec, e.usec, tdelta, fmt)
-                )
+                print(f"{e.sec:2d}.{e.usec:06d} | {tdelta:+7.3f}s | {fmt}")
 
                 last_slot_state = current_slot_state
 
