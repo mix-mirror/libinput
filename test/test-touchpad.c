@@ -1765,6 +1765,39 @@ START_TEST(touchpad_palm_detect_tool_palm_on_off)
 }
 END_TEST
 
+START_TEST(touchpad_palm_detect_tool_palm_stale_after_sendevents)
+{
+	struct litest_device *dev = litest_current_device();
+	struct libinput *li = dev->libinput;
+
+	if (!touchpad_has_tool_palm(dev))
+		return LITEST_NOT_APPLICABLE;
+
+	/* Touch flagged as palm by the firmware */
+	litest_touch_down(dev, 0, 50, 50);
+	litest_event(dev, EV_ABS, ABS_MT_TOOL_TYPE, MT_TOOL_PALM);
+	litest_event(dev, EV_SYN, SYN_REPORT, 0);
+	litest_touch_move_to(dev, 0, 50, 50, 70, 70, 10);
+	litest_drain_events(li);
+
+	/* While the device is disabled (fd closed), the kernel slot
+	 * reverts to finger - we never see that event */
+	litest_sendevents_off(dev);
+	litest_event(dev, EV_ABS, ABS_MT_TOOL_TYPE, MT_TOOL_FINGER);
+	litest_event(dev, EV_SYN, SYN_REPORT, 0);
+	litest_touch_up(dev, 0);
+	litest_sendevents_on(dev);
+	litest_drain_events(li);
+
+	/* A new finger in the same slot must not be treated as palm */
+	litest_touch_down(dev, 0, 50, 50);
+	litest_touch_move_to(dev, 0, 50, 50, 70, 70, 10);
+	litest_touch_up(dev, 0);
+
+	litest_assert_only_typed_events(li, LIBINPUT_EVENT_POINTER_MOTION);
+}
+END_TEST
+
 START_TEST(touchpad_palm_detect_tool_palm_tap_after)
 {
 	struct litest_device *dev = litest_current_device();
@@ -7684,6 +7717,7 @@ TEST_COLLECTION(touchpad_palm)
 	litest_add(touchpad_palm_detect_both_edges, LITEST_TOUCHPAD, LITEST_SINGLE_TOUCH);
 	litest_add(touchpad_palm_detect_tool_palm, LITEST_TOUCHPAD, LITEST_SINGLE_TOUCH);
 	litest_add(touchpad_palm_detect_tool_palm_on_off, LITEST_TOUCHPAD, LITEST_SINGLE_TOUCH);
+	litest_add(touchpad_palm_detect_tool_palm_stale_after_sendevents, LITEST_TOUCHPAD, LITEST_SINGLE_TOUCH);
 	litest_add(touchpad_palm_detect_tool_palm_tap, LITEST_TOUCHPAD, LITEST_SINGLE_TOUCH);
 	litest_add(touchpad_palm_detect_tool_palm_tap_after, LITEST_TOUCHPAD, LITEST_SINGLE_TOUCH);
 

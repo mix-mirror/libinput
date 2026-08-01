@@ -2079,6 +2079,7 @@ tp_sync_touch(struct tp_dispatch *tp,
 {
 	struct libevdev *evdev = device->evdev;
 	int tracking_id;
+	int tool_type;
 
 	if (!libevdev_fetch_slot_value(evdev, slot, ABS_MT_POSITION_X, &t->point.x))
 		t->point.x = libevdev_get_event_value(evdev, EV_ABS, ABS_X);
@@ -2090,6 +2091,13 @@ tp_sync_touch(struct tp_dispatch *tp,
 
 	libevdev_fetch_slot_value(evdev, slot, ABS_MT_TOUCH_MAJOR, &t->major);
 	libevdev_fetch_slot_value(evdev, slot, ABS_MT_TOUCH_MINOR, &t->minor);
+
+	/* The kernel slot value persists across touches but evdev only
+	 * sends events on changes. If the value changed while our fd was
+	 * closed (e.g. send-events DISABLED), a stale is_tool_palm would
+	 * mark every new touch in this slot as palm, forever. */
+	if (libevdev_fetch_slot_value(evdev, slot, ABS_MT_TOOL_TYPE, &tool_type))
+		t->is_tool_palm = tool_type == MT_TOOL_PALM;
 
 	if (libevdev_fetch_slot_value(evdev, slot, ABS_MT_TRACKING_ID, &tracking_id) &&
 	    tracking_id != -1)
