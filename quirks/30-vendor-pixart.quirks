@@ -35,3 +35,12 @@ MatchVendor=0x093A
 MatchProduct=0x4811
 MatchUdevType=touchpad
 AttrInputProp=+INPUT_PROP_PRESSUREPAD
+
+# ASUS Chromebook CX1405CTA
+# ASUS Chromebook CX1505CKA
+[Pixart Touchpad (093A:200F)]
+MatchBus=i2c
+MatchUdevType=touchpad
+MatchVendor=0x093A
+MatchProduct=0x200F
+AttrPressureRange=20:8
