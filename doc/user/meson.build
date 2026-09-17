@@ -105,6 +105,7 @@ src_rst = files(
 	# svgs
 	'svg/button-debouncing-wave-diagram.svg',
 	'svg/button-scrolling.svg',
+	'svg/circular-scrolling.svg',
 	'svg/clickfinger.svg',
 	'svg/clickfinger-distance.svg',
 	'svg/edge-scrolling.svg',

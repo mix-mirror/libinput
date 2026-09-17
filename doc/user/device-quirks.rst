@@ -132,6 +132,8 @@ general-purpose **Model*** flags are listed here.
 
 ModelALPSSerialTouchpad, ModelAppleTouchpad, ModelWacomTouchpad, ModelChromebook
     Reserved for touchpads made by the respective vendors
+ModelCircularTouchpad
+    Indicates the physical shape of the touchpad is circular.
 ModelTouchpadVisibleMarker
     Indicates the touchpad has a drawn-on visible marker between the software
     buttons.

@@ -4,18 +4,23 @@
 Scrolling
 ==============================================================================
 
-libinput supports three different types of scrolling methods:
-:ref:`twofinger_scrolling`, :ref:`edge_scrolling` and
-:ref:`button_scrolling`. Some devices support multiple methods, though only
-one can be enabled at a time. As a general overview:
+libinput supports four different types of scrolling methods:
+:ref:`twofinger_scrolling`, :ref:`edge_scrolling`,
+:ref:`button_scrolling` and :ref:`circular_scrolling`. Some devices support
+multiple methods, though only one can be enabled at a time. As a general
+overview:
 
-- touchpad devices with physical buttons below the touchpad support edge and
-  two-finger scrolling
+- touchpad devices with physical buttons below the touchpad support
+  :ref:`edge scrolling <edge_scrolling>` and
+  :ref:`two-finger scrolling <twofinger_scrolling>`.
 - touchpad devices without physical buttons (:ref:`ClickPads <clickpad_softbuttons>`)
-  support two-finger scrolling and edge scrolling
-- pointing sticks provide on-button scrolling by default
-- mice and other pointing devices support on-button scrolling but it is not
-  enabled by default
+  support :ref:`edge scrolling <edge_scrolling>` and
+  :ref:`two-finger scrolling <twofinger_scrolling>`.
+- touchpad devices with a circular shape support
+  :ref:`circular scrolling <circular_scrolling>`
+- pointing sticks provide :ref:`on-button scrolling <button_scrolling>` by default
+- mice and other pointing devices support :ref:`on-button scrolling <button_scrolling>`
+  but it is not enabled by default
 
 A device may differ from the above based on its capabilities. See
 **libinput_device_config_scroll_set_method()** for documentation on how to
@@ -129,6 +134,27 @@ period, releasing the button does not engage the lock. This allows
 hold-to-scroll for short, precise adjustments without accidentally toggling
 the lock. A quick click or a brief scroll within the grace period still
 engages the lock as normal.
+
+.. _circular_scrolling:
+
+------------------------------------------------------------------------------
+Circular scrolling
+------------------------------------------------------------------------------
+
+On touchpads with a circular shape, circular scrolling is available, triggered
+by moving  finger in a circular clockwise or counter-clockwise motion.
+
+.. figure:: circular-scrolling.svg
+    :align: center
+
+    Circular scrolling
+
+Due to the shape of the touchpad, horizontal scrolling is not possible.
+
+Circular touchpads cannot automatically be detected by libinput and require
+the ``ModelCircularTouchpad`` :ref:`device quirk <device-quirks>`. If your
+circular touchpad does not have this quirk set, please
+:ref:`file an issue <reporting_bugs>`.
 
 .. _scroll_sources:
 
