@@ -35,3 +35,15 @@ MatchVendor=0x045E
 MatchProduct=0x0C8D
 MatchUdevType=touchpad
 AttrEventCode=-BTN_RIGHT
+
+# The same touchpad over Bluetooth when the keyboard is detached. udev tags it
+# external, which disables palm detection unless the touchpad sits below the
+# keys of a keyboard combo, as it does here. Like the attached touchpad it is a
+# clickpad that also advertises a right button.
+[Microsoft Surface Pro Flex Keyboard Touchpad (Bluetooth)]
+MatchBus=bluetooth
+MatchVendor=0x045E
+MatchProduct=0x0C7A
+MatchUdevType=touchpad
+AttrTPKComboLayout=below
+AttrEventCode=-BTN_RIGHT
