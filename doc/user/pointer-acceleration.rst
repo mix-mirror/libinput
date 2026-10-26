@@ -222,7 +222,10 @@ supplying the y axis values for this function, users can control the
 behavior of the device.
 
 The user should take into account the native device dpi and screen dpi in
-order to achieve the desired behavior/feel.
+order to achieve the desired behavior/feel. libinput does not modify the
+deltas before the custom function is applied: neither the
+:ref:`dpi normalization <motion_normalization>` nor the
+:ref:`trackpoint multiplier <trackpoint_multiplier>` applies to this profile.
 
 The custom acceleration function is defined using ``n`` points which are spaced
 uniformly along the x axis, starting from 0 and continuing in constant steps.

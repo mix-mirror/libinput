@@ -33,6 +33,10 @@ function ``f(dx, dy) → (dx', dy')``, the algorithm is effectively:
 
      f(M * dx, M * dy) → (dx', dy')
 
+The multiplier is not applied when the device uses the
+:ref:`custom acceleration profile <ptraccel-profile-custom>`. The custom
+acceleration function receives the trackpoint deltas unmodified.
+
 .. _trackpoint_multiplier_adjustment:
 
 ..............................................................................

@@ -32,6 +32,10 @@ delta of 1 should result in a movement of 1 pixel on a traditional
 (low-dpi) screen. On screens with high resolutions, the caller must scale
 according to the UI scale factors.
 
+Devices using the :ref:`custom acceleration profile <ptraccel-profile-custom>`
+are not normalized. The custom acceleration function receives deltas in
+device units.
+
 This normalization only applies to accelerated coordinates, unaccelerated
 coordinates are left in device-units. It is up to the caller to interpret
 those coordinates correctly.
