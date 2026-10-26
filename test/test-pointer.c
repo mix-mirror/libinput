@@ -2701,6 +2701,57 @@ START_TEST(pointer_accel_config)
 }
 END_TEST
 
+START_TEST(pointer_accel_custom_zero_delta)
+{
+	struct litest_device *dev = litest_current_device();
+	struct libinput_device *device = dev->libinput_device;
+	struct libinput *li = dev->libinput;
+	/* A constant output speed of 1 unit/ms makes each delta equal the
+	 * interval in ms that the filter measured */
+	double points[] = { 1.0, 1.0 };
+
+	struct libinput_config_accel *config =
+		libinput_config_accel_create(LIBINPUT_CONFIG_ACCEL_PROFILE_CUSTOM);
+	litest_assert_enum_eq(
+		libinput_config_accel_set_points(config,
+						 LIBINPUT_ACCEL_TYPE_MOTION,
+						 1.0,
+						 ARRAY_LENGTH(points),
+						 points),
+		LIBINPUT_CONFIG_STATUS_SUCCESS);
+	litest_assert_enum_eq(libinput_device_config_accel_apply(device, config),
+			      LIBINPUT_CONFIG_STATUS_SUCCESS);
+	libinput_config_accel_destroy(config);
+
+	litest_drain_events(li);
+
+	litest_event(dev, EV_REL, REL_X, 1);
+	litest_event(dev, EV_SYN, SYN_REPORT, 0);
+	litest_dispatch(li);
+	litest_drain_events(li);
+
+	/* Two deltas that cancel out within one frame */
+	msleep(20);
+	litest_event_unchecked(dev, EV_REL, REL_X, 1);
+	litest_event_unchecked(dev, EV_REL, REL_X, -1);
+	litest_event_unchecked(dev, EV_SYN, SYN_REPORT, 0);
+	litest_dispatch(li);
+	litest_assert_empty_queue(li);
+
+	/* The interval spans both sleeps: about 40ms, not 20ms */
+	msleep(20);
+	litest_event(dev, EV_REL, REL_X, 1);
+	litest_event(dev, EV_SYN, SYN_REPORT, 0);
+	litest_dispatch(li);
+
+	struct libinput_event *event = libinput_get_event(li);
+	struct libinput_event_pointer *ptrev = litest_is_motion_event(event);
+	litest_assert_double_gt(libinput_event_pointer_get_dx(ptrev), 30.0);
+	litest_assert_double_eq(libinput_event_pointer_get_dy(ptrev), 0.0);
+	libinput_event_destroy(event);
+}
+END_TEST
+
 START_TEST(pointer_accel_profile_invalid)
 {
 	struct litest_device *dev = litest_current_device();
@@ -3992,6 +4043,7 @@ TEST_COLLECTION(pointer)
 	litest_add(pointer_accel_profile_defaults, LITEST_TOUCHPAD, LITEST_ANY);
 	litest_add(pointer_accel_config_reset_to_defaults, LITEST_RELATIVE, LITEST_ANY);
 	litest_add(pointer_accel_config, LITEST_RELATIVE, LITEST_ANY);
+	litest_add_for_device(pointer_accel_custom_zero_delta, LITEST_MOUSE);
 	litest_add(pointer_accel_profile_invalid, LITEST_RELATIVE, LITEST_ANY);
 	litest_add(pointer_accel_profile_noaccel, LITEST_ANY, LITEST_TOUCHPAD|LITEST_RELATIVE|LITEST_TABLET);
 	litest_add(pointer_accel_profile_flat_motion_relative, LITEST_RELATIVE, LITEST_TOUCHPAD);

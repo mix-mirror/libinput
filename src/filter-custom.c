@@ -199,6 +199,13 @@ custom_accel_function_filter(struct custom_accel_function *cf,
 			     const struct device_float_coords *unaccelerated,
 			     usec_t time)
 {
+	const struct normalized_coords zero = { 0.0, 0.0 };
+
+	/* A zero delta must not update the timestamps, see
+	 * custom_accel_function_calculate_speed() */
+	if (device_float_is_zero(*unaccelerated))
+		return zero;
+
 	double speed = custom_accel_function_calculate_speed(cf, unaccelerated, time);
 
 	double accel_factor = custom_accel_function_profile(cf, speed);
