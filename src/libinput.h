@@ -5046,7 +5046,7 @@ libinput_device_config_tap_set_drag_enabled(struct libinput_device *device,
  * disabled
  *
  * @see libinput_device_config_tap_set_drag_enabled
- * @see libinput_device_config_tap_get_default_default_enabled
+ * @see libinput_device_config_tap_get_default_drag_enabled
  *
  * @since 1.2
  */
