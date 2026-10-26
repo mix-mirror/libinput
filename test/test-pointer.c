@@ -2654,6 +2654,8 @@ START_TEST(pointer_accel_config)
 		{ 1e10, { 1.0, 2.0, 2.5, 2.6 }, invalid },
 		{ 1, { 1.0, 2.0, -2.5, 2.6 }, invalid },
 		{ 1, { 1.0, 2.0, 1e10, 2.6 }, invalid },
+		{ NAN, { 1.0, 2.0, 2.5, 2.6 }, invalid },
+		{ 1, { 1.0, 2.0, NAN, 2.6 }, invalid },
 	};
 
 	litest_assert(libinput_device_config_accel_is_available(device));

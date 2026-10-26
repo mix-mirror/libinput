@@ -4517,7 +4517,8 @@ libinput_config_accel_set_points(struct libinput_config_accel *config,
 		return LIBINPUT_CONFIG_STATUS_INVALID;
 	}
 
-	if (step <= 0 || step > LIBINPUT_ACCEL_STEP_MAX)
+	/* Need the negation in case step is NaN */
+	if (!(step > 0 && step <= LIBINPUT_ACCEL_STEP_MAX))
 		return LIBINPUT_CONFIG_STATUS_INVALID;
 
 	if (npoints < LIBINPUT_ACCEL_NPOINTS_MIN ||
@@ -4525,8 +4526,9 @@ libinput_config_accel_set_points(struct libinput_config_accel *config,
 		return LIBINPUT_CONFIG_STATUS_INVALID;
 
 	for (size_t idx = 0; idx < npoints; idx++) {
-		if (points[idx] < LIBINPUT_ACCEL_POINT_MIN_VALUE ||
-		    points[idx] > LIBINPUT_ACCEL_POINT_MAX_VALUE)
+		/* Need the negation in case a point is NaN */
+		if (!(points[idx] >= LIBINPUT_ACCEL_POINT_MIN_VALUE &&
+		      points[idx] <= LIBINPUT_ACCEL_POINT_MAX_VALUE))
 			return LIBINPUT_CONFIG_STATUS_INVALID;
 	}
 
