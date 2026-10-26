@@ -109,6 +109,26 @@
       if you need to enable a new device.
     status: "close"
 
+.fix_formatting: &fix_formatting
+  name: "Fix formatting"
+  conditions:
+    labels:
+      - "bugbot::fix-formatting"
+  actions:
+    remove_labels:
+      - "bugbot::fix-formatting"
+    comment: |
+      This issue or merge request has serious issues with formatting, making it (near)
+      unreadable for the maintainers. Please ensure that formatting is applied correctly,
+      the descriptions are concise and readable and all information supplied is in
+      the correct formatting (use the Preview button during editing).
+
+      Once the formatting has been fixed, please re-open this issue.
+
+      See the [GitLab documentation on markdown](https://docs.gitlab.com/user/markdown/) if
+      needed.
+    status: "close"
+
 resource_rules:
   issues:
     rules:
@@ -199,6 +219,7 @@ resource_rules:
       - *close_needinfo
       - *remind_needinfo
       - *help_needed
+      - *fix_formatting
   merge_requests:
     rules:
       - name: "Remind contributor of commit rules"
@@ -242,3 +263,4 @@ resource_rules:
       - *close_needinfo
       - *remind_needinfo
       - *help_needed
+      - *fix_formatting
