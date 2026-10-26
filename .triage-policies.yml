@@ -136,7 +136,7 @@ resource_rules:
           remove_labels:
             - "bugbot::expect-mr"
           comment: |
-            I'm closing this bug in anticipation of a merge request that fixes this issue.
+            I'm closing this bug in anticipation of you filing a merge request that fixes this issue. :smile:
 
             If you are a new contributor, please see
             [the freedesktop.org wiki](https://gitlab.freedesktop.org/freedesktop/freedesktop/-/wikis/home)
