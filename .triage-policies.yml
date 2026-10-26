@@ -129,6 +129,26 @@
       needed.
     status: "close"
 
+.low_effort_ai: &low_effort_ai
+  name: "Low effort AI issue"
+  conditions:
+    labels:
+      - "bugbot::low-effort-ai"
+  actions:
+    remove_labels:
+      - "bugbot::low-effort-ai"
+    comment: |
+      This issue or merge request looks like a low-effort AI issue that hasn't
+      seen sufficient human review. Such contributions are not welcome here, we
+      expect users and contributors to respect maintainer time and put
+      reasonable effort into understanding the issues they file and/or code
+      they submit.
+
+      This automated bug notice is the most effort the maintainers will spend
+      on this issue. You may file a new issue/merge request as a human, without
+      punting the effort to an AI.
+    status: "close"
+
 resource_rules:
   issues:
     rules:
@@ -220,6 +240,7 @@ resource_rules:
       - *remind_needinfo
       - *help_needed
       - *fix_formatting
+      - *low_effort_ai
   merge_requests:
     rules:
       - name: "Remind contributor of commit rules"
@@ -264,3 +285,4 @@ resource_rules:
       - *remind_needinfo
       - *help_needed
       - *fix_formatting
+      - *low_effort_ai
