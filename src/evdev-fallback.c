@@ -1684,6 +1684,12 @@ fallback_init_rotation(struct fallback_dispatch *dispatch, struct evdev_device *
 	if (device->tags & EVDEV_TAG_TRACKPOINT)
 		return;
 
+	/* Rotation only applies to relative motion, so don't offer it
+	 * on devices that have none, e.g. keyboards with a wheel */
+	if (!libevdev_has_event_code(device->evdev, EV_REL, REL_X) ||
+	    !libevdev_has_event_code(device->evdev, EV_REL, REL_Y))
+		return;
+
 	dispatch->rotation.config.is_available = fallback_rotation_config_is_available;
 	dispatch->rotation.config.set_angle = fallback_rotation_config_set_angle;
 	dispatch->rotation.config.get_angle = fallback_rotation_config_get_angle;

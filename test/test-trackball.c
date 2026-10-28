@@ -257,6 +257,7 @@ TEST_COLLECTION(trackball)
 	litest_add(trackball_rotation_config_defaults, LITEST_TRACKBALL, LITEST_ANY);
 	litest_add(trackball_rotation_config_invalid_range, LITEST_TRACKBALL, LITEST_ANY);
 	litest_add(trackball_rotation_config_no_rotation, LITEST_POINTINGSTICK, LITEST_ANY);
+	litest_add(trackball_rotation_config_no_rotation, LITEST_WHEEL, LITEST_RELATIVE | LITEST_TABLET);
 	litest_add(trackball_rotation_config_right_angle, LITEST_TRACKBALL, LITEST_ANY);
 	litest_add(trackball_rotation_config_odd_angle, LITEST_TRACKBALL, LITEST_ANY);
 	litest_add(trackball_rotation_x, LITEST_TRACKBALL, LITEST_ANY);
